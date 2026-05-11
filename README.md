@@ -2,6 +2,8 @@
 
 Local weekly dashboard summarizing the top hiking trails in Washington State from WTA trip reports. Cards on the left, sticky map on the right. Filter by accessibility (Open / Snow gear / Closed), region, and driving time from Seattle/Bellevue. Runs weekly via launchd (macOS) or any cron, served at `http://localhost:8765`.
 
+![dashboard screenshot](docs/screenshot.jpg)
+
 > Personal weekly trail-status tool. Scrapes [wta.org](https://www.wta.org/) (1 req/sec, identified UA), routes via [public OSRM](https://router.project-osrm.org/), summarizes via OpenAI GPT-4o-mini, renders a single-file static dashboard.
 
 ## Architecture
