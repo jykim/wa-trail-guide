@@ -1,0 +1,17 @@
+# Secrets
+.env
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# Generated data (run ./run.sh to populate)
+data/*.json
+!data/extra_trails.json
+dist/*.html
+logs/
+
+# OS
+.DS_Store

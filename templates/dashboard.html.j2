@@ -1,0 +1,399 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>WA Trail Status — Week of {{ week_of }}</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+  .pill { cursor: pointer; user-select: none; transition: all .15s; }
+  .pill[aria-pressed="true"] { box-shadow: inset 0 0 0 2px currentColor; }
+  .access-open { background: #ecfdf5; color: #065f46; }
+  .access-snow_gear { background: #fffbeb; color: #92400e; }
+  .access-closed { background: #fef2f2; color: #991b1b; }
+  .access-unknown { background: #f3f4f6; color: #4b5563; }
+  .field-icon { width: 14px; height: 14px; display: inline-block; vertical-align: -2px; margin-right: 4px; }
+  #map { width: 100%; height: 100%; min-height: 420px; }
+  /* Tailwind preflight clamps img max-width which breaks Leaflet tile alignment. */
+  .leaflet-container img,
+  .leaflet-container .leaflet-tile,
+  .leaflet-container .leaflet-marker-icon,
+  .leaflet-container .leaflet-marker-shadow,
+  .leaflet-container .leaflet-image-layer {
+    max-width: none !important;
+    max-height: none !important;
+  }
+  .marker-dot {
+    width: 18px; height: 18px; border-radius: 50%;
+    border: 2px solid white; box-shadow: 0 0 0 1px rgba(0,0,0,0.3);
+  }
+  .marker-dot.marker-fresh {
+    box-shadow: 0 0 0 2px #1f2937;
+  }
+  .marker-open      { background: #10b981; }
+  .marker-snow_gear { background: #f59e0b; }
+  .marker-closed    { background: #ef4444; }
+  .marker-unknown   { background: #9ca3af; }
+  .leaflet-popup-content { margin: 8px 12px; font-size: 13px; line-height: 1.4; }
+  .leaflet-popup-content .popup-title { font-weight: 600; font-size: 14px; }
+  .leaflet-popup-content .popup-region { color: #6b7280; font-size: 11px; }
+</style>
+</head>
+<body class="bg-slate-50 text-slate-900">
+<div x-data='dashboard()' x-init='init()' class="lg:fixed lg:inset-0 flex flex-col">
+
+  <header class="flex items-baseline gap-3 px-4 py-2 border-b border-slate-200 bg-white flex-shrink-0">
+    <h1 class="text-base font-semibold tracking-tight whitespace-nowrap">WA Trail Status</h1>
+    <span class="text-xs text-slate-500 truncate">Week of {{ week_of }} · {{ trail_count }} trails · updated {{ generated_at }}</span>
+  </header>
+
+  <!-- Filter bar -->
+  <div class="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-2 border-b border-slate-200 bg-white flex-shrink-0">
+
+    <div class="flex items-center gap-1">
+      <span class="text-xs font-medium text-slate-600 mr-1">Status:</span>
+      <button class="pill px-2.5 py-1 rounded-full text-xs font-medium bg-slate-200 text-slate-700"
+              :aria-pressed="access === 'all'" @click="access = 'all'">
+        All <span class="opacity-70" x-text="'(' + trails.length + ')'"></span>
+      </button>
+      <template x-for="opt in accessOptions" :key="opt.value">
+        <button class="pill px-2.5 py-1 rounded-full text-xs font-medium"
+                :class="'access-' + opt.value"
+                :aria-pressed="access === opt.value"
+                @click="access = opt.value">
+          <span x-text="opt.label"></span>
+          <span class="ml-0.5 opacity-70" x-text="'(' + countBy('accessibility', opt.value) + ')'"></span>
+        </button>
+      </template>
+    </div>
+
+    <div class="flex items-center gap-1">
+      <span class="text-xs font-medium text-slate-600">Region:</span>
+      <select x-model="region" class="text-xs border border-slate-300 rounded px-2 py-1 bg-white max-w-[200px]">
+        <option value="all">All regions</option>
+        <template x-for="r in regions" :key="r">
+          <option :value="r" x-text="r"></option>
+        </template>
+      </select>
+    </div>
+
+    <div class="flex items-center gap-1">
+      <span class="text-xs font-medium text-slate-600">Drive:</span>
+      <select x-model.number="maxDrive" class="text-xs border border-slate-300 rounded px-2 py-1 bg-white">
+        <option value="0">Any</option>
+        <option value="60">≤ 1h</option>
+        <option value="120">≤ 2h</option>
+        <option value="180">≤ 3h</option>
+        <option value="240">≤ 4h</option>
+        <option value="300">≤ 5h</option>
+      </select>
+    </div>
+
+    <div class="flex items-center gap-1">
+      <span class="text-xs font-medium text-slate-600">Sort:</span>
+      <select x-model="sort" class="text-xs border border-slate-300 rounded px-2 py-1 bg-white">
+        <option value="rating">Rating</option>
+        <option value="recent">Most recent</option>
+        <option value="drive">Drive time</option>
+        <option value="volume">Volume</option>
+        <option value="name">Name (A–Z)</option>
+      </select>
+    </div>
+
+    <span class="ml-auto text-xs text-slate-500" x-text="visibleCount() + ' shown'"></span>
+  </div>
+
+  <!-- Cards (left, resizable + collapsible) + Map (right, full height) -->
+  <main class="flex-1 lg:min-h-0 flex flex-col lg:flex-row"
+        :style="`--left-width: ${leftWidth}px`">
+
+    <!-- Cards pane -->
+    <section x-show="!collapsed"
+             class="order-last lg:order-first flex flex-col gap-3 w-full lg:w-[var(--left-width)] lg:min-w-[260px] lg:max-w-[70vw] lg:shrink-0 lg:overflow-y-auto p-3 lg:py-3 lg:pl-4 lg:pr-3">
+      <div class="hidden lg:flex items-center justify-end -mb-1">
+        <button @click="toggleCollapse"
+                class="px-2 py-1 rounded text-xs text-slate-500 hover:text-slate-900 hover:bg-slate-100"
+                title="Hide list">⟨ Hide</button>
+      </div>
+    <template x-for="t in visible()" :key="t.slug">
+      <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-4 flex flex-col">
+
+        <div class="flex items-start justify-between gap-2 mb-1">
+          <div class="flex-1 min-w-0">
+            <a :href="t.url" target="_blank" rel="noopener" class="font-semibold text-slate-900 hover:text-blue-700" x-text="t.name"></a>
+            <div class="text-xs text-slate-500" x-text="t.region + (t.subregion ? ' › ' + t.subregion : '')"></div>
+          </div>
+          <span class="text-xs px-2 py-0.5 rounded-full font-medium whitespace-nowrap"
+                :class="t.status.is_stale ? 'access-unknown' : 'access-' + (t.status.accessibility || 'unknown')"
+                x-text="t.status.is_stale ? 'Stale' : accessLabel(t.status.accessibility)"></span>
+        </div>
+
+        <div class="text-xs text-slate-500 mb-2">
+          <span x-text="'★ ' + t.rating.toFixed(2)"></span>
+          ·
+          <span x-text="t.votes + ' votes'"></span>
+          <template x-if="t.length_miles">
+            <span> · <span x-text="t.length_miles + ' mi'"></span></span>
+          </template>
+          <template x-if="t.elev_gain_ft">
+            <span> · <span x-text="(t.elev_gain_ft || 0).toLocaleString() + ' ft gain'"></span></span>
+          </template>
+        </div>
+
+        <div class="text-xs text-slate-500 mb-2 flex flex-wrap gap-x-3" x-show="t.drive_seattle_min || t.drive_bellevue_min">
+          <span x-show="t.drive_bellevue_min">
+            <span class="text-slate-400">BVE</span> <span x-text="formatDrive(t.drive_bellevue_min)"></span><span x-show="t.drive_bellevue_mi" class="text-slate-400" x-text="' · ' + t.drive_bellevue_mi + 'mi'"></span>
+          </span>
+          <span x-show="t.drive_seattle_min">
+            <span class="text-slate-400">SEA</span> <span x-text="formatDrive(t.drive_seattle_min)"></span><span x-show="t.drive_seattle_mi" class="text-slate-400" x-text="' · ' + t.drive_seattle_mi + 'mi'"></span>
+          </span>
+        </div>
+
+        <p class="text-sm text-slate-700 mb-3" x-text="t.status.summary"></p>
+
+        <div class="grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-slate-600 mt-auto">
+          <div><span class="text-slate-400">Snow line:</span> <span x-text="t.status.snow_line_ft ? t.status.snow_line_ft.toLocaleString() + ' ft' : '—'"></span></div>
+          <div><span class="text-slate-400">Road:</span> <span x-text="t.status.road_status"></span></div>
+          <div><span class="text-slate-400">Bugs:</span> <span x-text="t.status.bugs"></span></div>
+          <div><span class="text-slate-400">Flowers:</span> <span x-text="t.status.wildflowers"></span></div>
+        </div>
+
+        <div class="mt-2 pt-2 border-t border-slate-100 text-xs flex items-center gap-1"
+             :class="t.status.is_stale ? 'text-amber-700' : 'text-slate-500'">
+          <span x-show="t.status.last_report_date" x-text="'Last report: ' + t.status.last_report_date"></span>
+          <span x-show="!t.status.last_report_date">No reports</span>
+          <span x-show="t.status.is_stale && t.status.days_since_report"
+                x-text="' · ' + t.status.days_since_report + 'd ago'"></span>
+        </div>
+
+      </div>
+    </template>
+      <div x-show="visibleCount() === 0" class="text-center text-slate-500 py-12">
+        No trails match the current filters.
+      </div>
+      <div class="text-[10px] text-slate-400 text-center pt-2 pb-1">
+        Sourced from <a href="https://www.wta.org" class="underline">wta.org</a> · classified by GPT-4o-mini
+      </div>
+    </section>
+
+    <!-- Resize handle (desktop only, hidden when collapsed) -->
+    <div x-show="!collapsed"
+         @mousedown="startResize"
+         class="hidden lg:flex items-center justify-center w-2 cursor-col-resize bg-transparent hover:bg-blue-100 active:bg-blue-200 group select-none"
+         title="Drag to resize">
+      <div class="w-0.5 h-12 bg-slate-300 group-hover:bg-blue-500 rounded transition-colors"></div>
+    </div>
+
+    <!-- Map pane (fills full viewport height on lg) -->
+    <section class="order-first lg:order-last flex-1 min-w-0 relative h-[420px] lg:h-full">
+      <button x-show="collapsed" @click="toggleCollapse"
+              class="hidden lg:flex absolute top-2 left-2 z-[1000] items-center gap-1 bg-white shadow rounded px-2 py-1 text-xs text-slate-700 border border-slate-200 hover:bg-slate-50"
+              title="Show list">⟩ Show list</button>
+      <div id="map"></div>
+    </section>
+
+  </main>
+</div>
+
+<script id="trail-data" type="application/json">{{ data_json | safe }}</script>
+
+<script>
+  function dashboard() {
+    const data = JSON.parse(document.getElementById('trail-data').textContent);
+    return {
+      trails: data.trails,
+      regions: data.regions,
+      access: 'all',           // default: show all trails
+      region: 'all',
+      maxDrive: 0,             // minutes; 0 = no filter
+      sort: 'rating',
+      accessOptions: [
+        { value: 'open',       label: 'Open' },
+        { value: 'snow_gear',  label: 'Snow gear' },
+        { value: 'closed',     label: 'Closed' },
+      ],
+      _map: null,
+      _markersLayer: null,
+      _resizing: false,
+      _invalidateFrame: null,
+      leftWidth: 320,
+      collapsed: false,
+      accessLabel(v) {
+        return ({ open: 'Open', snow_gear: 'Snow gear', closed: 'Closed' })[v] || 'Unknown';
+      },
+      formatDrive(min) {
+        if (min == null) return '';
+        const h = Math.floor(min / 60), m = min % 60;
+        return h ? `${h}h ${m}m` : `${m}m`;
+      },
+      minDrive(t) {
+        const a = t.drive_seattle_min, b = t.drive_bellevue_min;
+        if (a == null && b == null) return null;
+        if (a == null) return b;
+        if (b == null) return a;
+        return Math.min(a, b);
+      },
+      init() {
+        this.loadPrefs();
+        this.initMap();
+        // Flex container can finish layout after initMap — re-measure once.
+        requestAnimationFrame(() => this._map && this._map.invalidateSize());
+        window.addEventListener('resize', () => this._map && this._map.invalidateSize());
+        // Redraw markers whenever filters change.
+        this.$watch('access', () => this.drawMarkers());
+        this.$watch('region', () => this.drawMarkers());
+        this.$watch('maxDrive', () => this.drawMarkers());
+        // Layout-state changes -> resize map (and persist).
+        this.$watch('collapsed', () => {
+          this.savePrefs();
+          this.scheduleInvalidate();
+        });
+        this.$watch('leftWidth', () => {
+          this.scheduleInvalidate();
+          if (!this._resizing) this.savePrefs();
+        });
+      },
+      loadPrefs() {
+        try {
+          const w = parseInt(localStorage.getItem('wta-status:left-width'), 10);
+          if (!isNaN(w) && w >= 200) {
+            this.leftWidth = w;
+          } else {
+            this.leftWidth = Math.max(260, Math.min(560, Math.round(window.innerWidth * 0.25)));
+          }
+          this.collapsed = localStorage.getItem('wta-status:collapsed') === '1';
+        } catch (e) {
+          this.leftWidth = 320;
+        }
+      },
+      savePrefs() {
+        try {
+          localStorage.setItem('wta-status:left-width', String(Math.round(this.leftWidth)));
+          localStorage.setItem('wta-status:collapsed', this.collapsed ? '1' : '0');
+        } catch (e) {}
+      },
+      toggleCollapse() {
+        this.collapsed = !this.collapsed;
+      },
+      scheduleInvalidate() {
+        if (this._invalidateFrame) return;
+        this._invalidateFrame = requestAnimationFrame(() => {
+          this._invalidateFrame = null;
+          this._map && this._map.invalidateSize();
+        });
+      },
+      startResize(e) {
+        e.preventDefault();
+        this._resizing = true;
+        const startX = e.clientX;
+        const startW = this.leftWidth;
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
+        const onMove = (ev) => {
+          const dx = ev.clientX - startX;
+          const maxW = Math.max(300, window.innerWidth * 0.7);
+          this.leftWidth = Math.max(260, Math.min(maxW, startW + dx));
+        };
+        const onUp = () => {
+          this._resizing = false;
+          document.body.style.cursor = '';
+          document.body.style.userSelect = '';
+          window.removeEventListener('mousemove', onMove);
+          window.removeEventListener('mouseup', onUp);
+          this.savePrefs();
+        };
+        window.addEventListener('mousemove', onMove);
+        window.addEventListener('mouseup', onUp);
+      },
+      initMap() {
+        // Washington state bounds — fit on first load.
+        this._map = L.map('map', { scrollWheelZoom: false }).setView([47.4, -120.7], 7);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 18,
+          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        }).addTo(this._map);
+        this._markersLayer = L.layerGroup().addTo(this._map);
+        // Click-to-enable scroll zoom (avoids hijacking page scroll).
+        this._map.on('focus', () => this._map.scrollWheelZoom.enable());
+        this._map.on('blur',  () => this._map.scrollWheelZoom.disable());
+        this.drawMarkers();
+      },
+      drawMarkers() {
+        if (!this._markersLayer) return;
+        this._markersLayer.clearLayers();
+        const trails = this.visible().filter(t => t.lat != null && t.lng != null);
+        const bounds = [];
+        for (const t of trails) {
+          const acc = t.status.accessibility || 'unknown';
+          const markerClass = t.status.is_stale ? 'unknown' : acc;
+          const pillClass = t.status.is_stale ? 'unknown' : acc;
+          const pillLabel = t.status.is_stale ? 'Stale' : this.accessLabel(acc);
+          const freshClass = t.status.is_fresh ? ' marker-fresh' : '';
+          const icon = L.divIcon({
+            className: '',
+            html: `<div class="marker-dot marker-${markerClass}${freshClass}"></div>`,
+            iconSize: [18, 18],
+            iconAnchor: [9, 9],
+          });
+          const marker = L.marker([t.lat, t.lng], { icon });
+          const dateLine = t.status.is_stale
+            ? `<div class="mt-1 text-amber-700 text-xs">Stale${t.status.days_since_report ? ' · ' + t.status.days_since_report + 'd ago' : ''}</div>`
+            : '';
+          const popup = `
+            <div>
+              <div class="popup-title"><a href="${t.url}" target="_blank" rel="noopener">${t.name}</a></div>
+              <div class="popup-region">${t.region}${t.subregion ? ' › ' + t.subregion : ''}</div>
+              <div class="mt-1"><span class="text-xs px-2 py-0.5 rounded-full font-medium access-${pillClass}">${pillLabel}</span>
+                <span class="text-xs text-slate-500 ml-1">★ ${t.rating.toFixed(2)} · ${t.votes} votes</span>
+              </div>
+              <div class="mt-1 text-slate-700" style="max-width:280px">${t.status.summary || ''}</div>
+              ${dateLine}
+            </div>
+          `;
+          marker.bindPopup(popup);
+          marker.addTo(this._markersLayer);
+          bounds.push([t.lat, t.lng]);
+        }
+        if (bounds.length > 0) {
+          this._map.fitBounds(bounds, { padding: [40, 40], maxZoom: 10 });
+        }
+      },
+      countBy(field, value) {
+        return this.trails.filter(t => t.status[field] === value).length;
+      },
+      visible() {
+        let out = this.trails.slice();
+        if (this.access !== 'all') out = out.filter(t => t.status.accessibility === this.access);
+        if (this.region !== 'all') out = out.filter(t => t.region === this.region);
+        if (this.maxDrive > 0) {
+          out = out.filter(t => {
+            const md = this.minDrive(t);
+            return md != null && md <= this.maxDrive;
+          });
+        }
+        const key = {
+          rating: t => -t.rating,
+          recent: t => t.status.last_report_date ? -new Date(t.status.last_report_date).getTime() : 0,
+          drive:  t => this.minDrive(t) ?? Number.MAX_SAFE_INTEGER,
+          volume: t => -t.votes,
+          name:   t => t.name.toLowerCase(),
+        }[this.sort];
+        out.sort((a,b) => {
+          const ka = key(a), kb = key(b);
+          return ka < kb ? -1 : ka > kb ? 1 : 0;
+        });
+        return out;
+      },
+      visibleCount() { return this.visible().length; },
+    };
+  }
+</script>
+
+</body>
+</html>
