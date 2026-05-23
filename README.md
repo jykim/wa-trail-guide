@@ -28,8 +28,10 @@ render.py         → dist/index.html        (Jinja2 → Tailwind + Alpine + Lea
 | `src/scrape_reports.py` | Per-trail trip reports parser (`/@@related_tripreport_listing`) |
 | `src/summarize.py` | OpenAI tool-use → structured status |
 | `src/render.py` | Merges artifacts; computes stale/fresh flags; renders HTML |
+| `src/server.py` | Static server for `dist/` + `/api/search` and `/api/add` endpoints for on-demand WTA fetch |
 | `templates/dashboard.html.j2` | Tailwind + Alpine.js + Leaflet single-page UI |
 | `run.sh` | Pipeline driver (chains the five steps via uv) |
+| `serve.sh` | Launches `src/server.py` with project env loaded |
 | `launchd/*.plist` | Weekly cron + always-on local HTTP server |
 
 ## Data files
@@ -48,6 +50,7 @@ render.py         → dist/index.html        (Jinja2 → Tailwind + Alpine + Lea
 - **Region select** — 11 WTA regions
 - **Drive-time filter** — Any / ≤1h / ≤2h / ≤3h / ≤4h / ≤5h, using `min(seattle_min, bellevue_min)`
 - **Sort** — Rating · Most recent · Drive time · Volume · Name
+- **Search** — type a name to filter the current list; on no match, hit "Search wta.org" to fetch live results from WTA and click "Add" to incorporate a new trail (fetches page + 3 reports + OpenAI summary + re-renders, ~20s). Requires `serve.sh` instead of the bare `python -m http.server`.
 - **Map** (OpenStreetMap + Leaflet)
   - Marker color = accessibility (green/amber/red); gray = stale
   - Bold dark ring = report within 7 days
@@ -78,6 +81,7 @@ cd wa-trail-guide
 uv sync
 cp .env.example .env   # add OPENAI_API_KEY (or rely on shell env)
 ./run.sh               # ~3-4 min cold run, ~$0.02 OpenAI cost
+./serve.sh &           # background server (dist/ + /api/search + /api/add)
 open http://localhost:8765
 ```
 

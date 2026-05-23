@@ -7,11 +7,11 @@
 
   <key>ProgramArguments</key>
   <array>
-    <string>/Users/lifidea/Vaults/OVM/_Sandbox_/wta-status/run.sh</string>
+    <string>/Users/lifidea/dev/wa-trail-guide/run.sh</string>
   </array>
 
   <key>WorkingDirectory</key>
-  <string>/Users/lifidea/Vaults/OVM/_Sandbox_/wta-status</string>
+  <string>/Users/lifidea/dev/wa-trail-guide</string>
 
   <key>StartCalendarInterval</key>
   <dict>
@@ -21,9 +21,9 @@
   </dict>
 
   <key>StandardOutPath</key>
-  <string>/Users/lifidea/Vaults/OVM/_Sandbox_/wta-status/logs/launchd.out</string>
+  <string>/Users/lifidea/dev/wa-trail-guide/logs/launchd.out</string>
   <key>StandardErrorPath</key>
-  <string>/Users/lifidea/Vaults/OVM/_Sandbox_/wta-status/logs/launchd.err</string>
+  <string>/Users/lifidea/dev/wa-trail-guide/logs/launchd.err</string>
 
   <key>RunAtLoad</key>
   <false/>

@@ -7,6 +7,7 @@ from __future__ import annotations
 import json
 import os
 import sys
+from datetime import date
 
 from dotenv import load_dotenv
 from openai import OpenAI
@@ -206,9 +207,26 @@ def main() -> int:
                 "_cache_sig": sig,
             }
 
+    # Track accessibility changes vs the previous run. For each slug where the new
+    # accessibility differs from the prior accessibility, record the prior value and
+    # the date the change was detected. Cached entries (no new report) inherit any
+    # prev_accessibility/changed_at already on the previous entry, so a change stays
+    # visible across runs until accessibility shifts again.
+    today_iso = date.today().isoformat()
+    changes = 0
+    for slug, entry in out.items():
+        prev_entry = prev_status.get(slug) or {}
+        prev_acc = prev_entry.get("accessibility")
+        cur_acc = entry.get("accessibility")
+        if prev_acc and cur_acc and prev_acc != cur_acc:
+            entry["prev_accessibility"] = prev_acc
+            entry["changed_at"] = today_iso
+            changes += 1
+            print(f"  ~ change: {slug}: {prev_acc} -> {cur_acc}", file=sys.stderr)
+
     status_path.write_text(json.dumps(out, indent=2, ensure_ascii=False))
     print(
-        f"[summarize] wrote {len(out)} entries ({hits} cached, {misses} OpenAI calls) -> {status_path}",
+        f"[summarize] wrote {len(out)} entries ({hits} cached, {misses} OpenAI calls, {changes} new changes) -> {status_path}",
         file=sys.stderr,
     )
     return 0

@@ -596,7 +596,7 @@ wheels = [
 ]
 
 [[package]]
-name = "wta-status"
+name = "wa-trail-guide"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
