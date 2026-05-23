@@ -11,6 +11,7 @@ from common import DATA, DIST, TEMPLATES
 
 STALE_DAYS = 30
 FRESH_DAYS = 7
+CHANGE_WINDOW_DAYS = 14  # how long a status change stays in the Updates section
 
 
 def _days_since(iso: str) -> int | None:
@@ -38,6 +39,15 @@ def main() -> int:
         is_stale = days is None or days > STALE_DAYS
         is_fresh = days is not None and days <= FRESH_DAYS
 
+        prev_acc = s.get("prev_accessibility") or ""
+        changed_at = s.get("changed_at") or ""
+        days_since_change = _days_since(changed_at)
+        is_recently_changed = (
+            bool(prev_acc)
+            and days_since_change is not None
+            and days_since_change <= CHANGE_WINDOW_DAYS
+        )
+
         drive: dict = {}
         if t.get("lat") is not None and t.get("lng") is not None:
             key = f"{t['lat']:.5f},{t['lng']:.5f}"
@@ -61,6 +71,10 @@ def main() -> int:
                 "days_since_report": days,
                 "is_stale": is_stale,
                 "is_fresh": is_fresh,
+                "prev_accessibility": prev_acc,
+                "changed_at": changed_at,
+                "days_since_change": days_since_change,
+                "is_recently_changed": is_recently_changed,
             },
         })
 
