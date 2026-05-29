@@ -1,0 +1,686 @@
+[
+  {
+    "name": "Custer Safety Rest Area (NB)",
+    "type": "rest_area",
+    "highway": "I-5",
+    "lat": 48.922,
+    "lng": -122.63,
+    "amenities": "restrooms, picnic, info, pet area, dump station",
+    "state": "WA"
+  },
+  {
+    "name": "Custer Safety Rest Area (SB)",
+    "type": "rest_area",
+    "highway": "I-5",
+    "lat": 48.921,
+    "lng": -122.6286,
+    "amenities": "restrooms, picnic, info, pet area",
+    "state": "WA"
+  },
+  {
+    "name": "Bow Hill Safety Rest Area (NB)",
+    "type": "rest_area",
+    "highway": "I-5",
+    "lat": 48.5604,
+    "lng": -122.3622,
+    "amenities": "restrooms, picnic, pet area",
+    "state": "WA"
+  },
+  {
+    "name": "Bow Hill Safety Rest Area (SB)",
+    "type": "rest_area",
+    "highway": "I-5",
+    "lat": 48.5605,
+    "lng": -122.361,
+    "amenities": "restrooms, picnic, pet area",
+    "state": "WA"
+  },
+  {
+    "name": "Smokey Point Safety Rest Area (NB)",
+    "type": "rest_area",
+    "highway": "I-5",
+    "lat": 48.1654,
+    "lng": -122.1818,
+    "amenities": "restrooms, picnic, pet area, RV dump",
+    "state": "WA"
+  },
+  {
+    "name": "Smokey Point Safety Rest Area (SB)",
+    "type": "rest_area",
+    "highway": "I-5",
+    "lat": 48.1646,
+    "lng": -122.1812,
+    "amenities": "restrooms, picnic, pet area",
+    "state": "WA"
+  },
+  {
+    "name": "SeaTac Safety Rest Area (SB)",
+    "type": "rest_area",
+    "highway": "I-5",
+    "lat": 47.4068,
+    "lng": -122.27,
+    "amenities": "restrooms, picnic, pet area",
+    "state": "WA"
+  },
+  {
+    "name": "Maytown Safety Rest Area (NB)",
+    "type": "rest_area",
+    "highway": "I-5",
+    "lat": 46.8949,
+    "lng": -122.9082,
+    "amenities": "restrooms, picnic, pet area, RV dump",
+    "state": "WA"
+  },
+  {
+    "name": "Scatter Creek Safety Rest Area (SB)",
+    "type": "rest_area",
+    "highway": "I-5",
+    "lat": 46.8615,
+    "lng": -122.9069,
+    "amenities": "restrooms, picnic, pet area",
+    "state": "WA"
+  },
+  {
+    "name": "Toutle River Safety Rest Area (NB)",
+    "type": "rest_area",
+    "highway": "I-5",
+    "lat": 46.3408,
+    "lng": -122.819,
+    "amenities": "restrooms, picnic, pet area, info",
+    "state": "WA"
+  },
+  {
+    "name": "Toutle River Safety Rest Area (SB)",
+    "type": "rest_area",
+    "highway": "I-5",
+    "lat": 46.3389,
+    "lng": -122.8174,
+    "amenities": "restrooms, picnic, pet area",
+    "state": "WA"
+  },
+  {
+    "name": "Silver Lake Safety Rest Area (NB)",
+    "type": "rest_area",
+    "highway": "I-5",
+    "lat": 46.3052,
+    "lng": -122.8003,
+    "amenities": "restrooms, picnic",
+    "state": "WA"
+  },
+  {
+    "name": "Gee Creek Safety Rest Area (NB)",
+    "type": "rest_area",
+    "highway": "I-5",
+    "lat": 45.777,
+    "lng": -122.7195,
+    "amenities": "restrooms, picnic, pet area, RV dump",
+    "state": "WA"
+  },
+  {
+    "name": "Gee Creek Safety Rest Area (SB)",
+    "type": "rest_area",
+    "highway": "I-5",
+    "lat": 45.7765,
+    "lng": -122.718,
+    "amenities": "restrooms, picnic, pet area",
+    "state": "WA"
+  },
+  {
+    "name": "Indian John Hill Safety Rest Area (EB)",
+    "type": "rest_area",
+    "highway": "I-90",
+    "lat": 47.1772,
+    "lng": -120.77,
+    "amenities": "restrooms, picnic, pet area, info, RV dump",
+    "state": "WA"
+  },
+  {
+    "name": "Indian John Hill Safety Rest Area (WB)",
+    "type": "rest_area",
+    "highway": "I-90",
+    "lat": 47.1769,
+    "lng": -120.7686,
+    "amenities": "restrooms, picnic, pet area",
+    "state": "WA"
+  },
+  {
+    "name": "Ryegrass Safety Rest Area (EB)",
+    "type": "rest_area",
+    "highway": "I-90",
+    "lat": 46.9437,
+    "lng": -120.0188,
+    "amenities": "restrooms, picnic, pet area",
+    "state": "WA"
+  },
+  {
+    "name": "Ryegrass Safety Rest Area (WB)",
+    "type": "rest_area",
+    "highway": "I-90",
+    "lat": 46.9442,
+    "lng": -120.0174,
+    "amenities": "restrooms, picnic, pet area",
+    "state": "WA"
+  },
+  {
+    "name": "Schrag Safety Rest Area (EB)",
+    "type": "rest_area",
+    "highway": "I-90",
+    "lat": 47.0463,
+    "lng": -118.452,
+    "amenities": "restrooms, picnic, pet area",
+    "state": "WA"
+  },
+  {
+    "name": "Schrag Safety Rest Area (WB)",
+    "type": "rest_area",
+    "highway": "I-90",
+    "lat": 47.047,
+    "lng": -118.4503,
+    "amenities": "restrooms, picnic, pet area",
+    "state": "WA"
+  },
+  {
+    "name": "Selah Creek Safety Rest Area (NB)",
+    "type": "rest_area",
+    "highway": "I-82",
+    "lat": 46.7475,
+    "lng": -120.55,
+    "amenities": "restrooms, picnic, pet area, scenic overlook",
+    "state": "WA"
+  },
+  {
+    "name": "Selah Creek Safety Rest Area (SB)",
+    "type": "rest_area",
+    "highway": "I-82",
+    "lat": 46.746,
+    "lng": -120.5485,
+    "amenities": "restrooms, picnic, pet area",
+    "state": "WA"
+  },
+  {
+    "name": "Prosser Safety Rest Area (EB)",
+    "type": "rest_area",
+    "highway": "I-82",
+    "lat": 46.251,
+    "lng": -119.795,
+    "amenities": "restrooms, picnic, pet area",
+    "state": "WA"
+  },
+  {
+    "name": "Prosser Safety Rest Area (WB)",
+    "type": "rest_area",
+    "highway": "I-82",
+    "lat": 46.2502,
+    "lng": -119.7935,
+    "amenities": "restrooms, picnic, pet area",
+    "state": "WA"
+  },
+  {
+    "name": "Horn School Safety Rest Area (NB)",
+    "type": "rest_area",
+    "highway": "US 395",
+    "lat": 47.905,
+    "lng": -118.385,
+    "amenities": "restrooms, picnic",
+    "state": "WA"
+  },
+  {
+    "name": "Stanwood Safety Rest Area",
+    "type": "rest_area",
+    "highway": "SR 532",
+    "lat": 48.237,
+    "lng": -122.37,
+    "amenities": "restrooms, picnic",
+    "state": "WA"
+  },
+  {
+    "name": "Sultan Safety Rest Area",
+    "type": "rest_area",
+    "highway": "US 2",
+    "lat": 47.8632,
+    "lng": -121.8175,
+    "amenities": "restrooms, picnic, pet area",
+    "state": "WA"
+  },
+  {
+    "name": "Winchester Wasteway Safety Rest Area (EB)",
+    "type": "rest_area",
+    "highway": "I-90",
+    "lat": 46.9667,
+    "lng": -119.555,
+    "amenities": "restrooms, picnic, pet area",
+    "state": "WA"
+  },
+  {
+    "name": "Winchester Wasteway Safety Rest Area (WB)",
+    "type": "rest_area",
+    "highway": "I-90",
+    "lat": 46.9672,
+    "lng": -119.5538,
+    "amenities": "restrooms, picnic, pet area",
+    "state": "WA"
+  },
+  {
+    "name": "Flying J Travel Center — Ellensburg",
+    "type": "truck_stop",
+    "highway": "I-90 exit 109",
+    "lat": 47.0046,
+    "lng": -120.5466,
+    "amenities": "fuel, food, showers, parking",
+    "state": "WA"
+  },
+  {
+    "name": "Pilot Travel Center — North Bend",
+    "type": "truck_stop",
+    "highway": "I-90 exit 34",
+    "lat": 47.4855,
+    "lng": -121.786,
+    "amenities": "fuel, food, showers, parking",
+    "state": "WA"
+  },
+  {
+    "name": "Pilot Travel Center — Sumner",
+    "type": "truck_stop",
+    "highway": "SR 410 / I-5",
+    "lat": 47.1962,
+    "lng": -122.2415,
+    "amenities": "fuel, food, parking",
+    "state": "WA"
+  },
+  {
+    "name": "Love's Travel Stop — Yakima",
+    "type": "truck_stop",
+    "highway": "I-82 exit 31",
+    "lat": 46.6048,
+    "lng": -120.491,
+    "amenities": "fuel, food, showers, parking",
+    "state": "WA"
+  },
+  {
+    "name": "Love's Travel Stop — Spokane Valley",
+    "type": "truck_stop",
+    "highway": "I-90 exit 296",
+    "lat": 47.6587,
+    "lng": -117.268,
+    "amenities": "fuel, food, showers, parking",
+    "state": "WA"
+  },
+  {
+    "name": "TA Travel Center — North Bend",
+    "type": "truck_stop",
+    "highway": "I-90 exit 34",
+    "lat": 47.488,
+    "lng": -121.782,
+    "amenities": "fuel, food, showers, parking",
+    "state": "WA"
+  },
+  {
+    "name": "Flying J Travel Center — Spokane",
+    "type": "truck_stop",
+    "highway": "I-90 exit 272",
+    "lat": 47.6772,
+    "lng": -117.5828,
+    "amenities": "fuel, food, parking",
+    "state": "WA"
+  },
+  {
+    "name": "Pilot Travel Center — Toppenish",
+    "type": "truck_stop",
+    "highway": "US 97",
+    "lat": 46.3787,
+    "lng": -120.311,
+    "amenities": "fuel, food, parking",
+    "state": "WA"
+  },
+  {
+    "name": "Flying J Travel Center — Lacey",
+    "type": "truck_stop",
+    "highway": "I-5 exit 111",
+    "lat": 46.9938,
+    "lng": -122.78,
+    "amenities": "fuel, food, showers, parking",
+    "state": "WA"
+  },
+  {
+    "name": "Pilot Travel Center — Tumwater",
+    "type": "truck_stop",
+    "highway": "I-5 exit 99",
+    "lat": 46.9787,
+    "lng": -122.9088,
+    "amenities": "fuel, food, parking",
+    "state": "WA"
+  },
+  {
+    "name": "Love's Travel Stop — Walla Walla",
+    "type": "truck_stop",
+    "highway": "US 12",
+    "lat": 46.071,
+    "lng": -118.345,
+    "amenities": "fuel, food, showers, parking",
+    "state": "WA"
+  },
+  {
+    "name": "TA Travel Center — Kelso/Longview",
+    "type": "truck_stop",
+    "highway": "I-5 exit 36",
+    "lat": 46.1325,
+    "lng": -122.905,
+    "amenities": "fuel, food, showers, parking",
+    "state": "WA"
+  },
+  {
+    "name": "Jantzen Beach Rest Area",
+    "type": "rest_area",
+    "highway": "I-5",
+    "lat": 45.6182,
+    "lng": -122.673,
+    "amenities": "restrooms, picnic",
+    "state": "OR"
+  },
+  {
+    "name": "Baldock Safety Rest Area (NB)",
+    "type": "rest_area",
+    "highway": "I-5",
+    "lat": 45.2155,
+    "lng": -122.7672,
+    "amenities": "restrooms, picnic, pet area",
+    "state": "OR"
+  },
+  {
+    "name": "Baldock Safety Rest Area (SB)",
+    "type": "rest_area",
+    "highway": "I-5",
+    "lat": 45.2148,
+    "lng": -122.7658,
+    "amenities": "restrooms, picnic, pet area",
+    "state": "OR"
+  },
+  {
+    "name": "Santiam Rest Area (NB)",
+    "type": "rest_area",
+    "highway": "I-5",
+    "lat": 44.5575,
+    "lng": -123.0382,
+    "amenities": "restrooms, picnic",
+    "state": "OR"
+  },
+  {
+    "name": "Santiam Rest Area (SB)",
+    "type": "rest_area",
+    "highway": "I-5",
+    "lat": 44.5566,
+    "lng": -123.0395,
+    "amenities": "restrooms, picnic",
+    "state": "OR"
+  },
+  {
+    "name": "Gettings Creek Rest Area",
+    "type": "rest_area",
+    "highway": "I-5",
+    "lat": 43.7158,
+    "lng": -123.085,
+    "amenities": "restrooms, picnic",
+    "state": "OR"
+  },
+  {
+    "name": "Manning Rest Area (NB)",
+    "type": "rest_area",
+    "highway": "I-5",
+    "lat": 42.6815,
+    "lng": -122.9925,
+    "amenities": "restrooms, picnic",
+    "state": "OR"
+  },
+  {
+    "name": "Valley of the Rogue State Park",
+    "type": "rest_area",
+    "highway": "I-5",
+    "lat": 42.4123,
+    "lng": -123.137,
+    "amenities": "restrooms, picnic, dump",
+    "state": "OR"
+  },
+  {
+    "name": "Siskiyou Summit Rest Area",
+    "type": "rest_area",
+    "highway": "I-5",
+    "lat": 42.071,
+    "lng": -122.576,
+    "amenities": "restrooms, scenic overlook",
+    "state": "OR"
+  },
+  {
+    "name": "Memaloose Rest Area",
+    "type": "rest_area",
+    "highway": "I-84",
+    "lat": 45.7012,
+    "lng": -121.345,
+    "amenities": "restrooms, picnic, river view",
+    "state": "OR"
+  },
+  {
+    "name": "Deschutes River Rest Area",
+    "type": "rest_area",
+    "highway": "I-84",
+    "lat": 45.63,
+    "lng": -120.907,
+    "amenities": "restrooms, picnic, river access",
+    "state": "OR"
+  },
+  {
+    "name": "Boardman Rest Area",
+    "type": "rest_area",
+    "highway": "I-84",
+    "lat": 45.816,
+    "lng": -119.715,
+    "amenities": "restrooms, picnic",
+    "state": "OR"
+  },
+  {
+    "name": "Stanfield Rest Area",
+    "type": "rest_area",
+    "highway": "I-84",
+    "lat": 45.79,
+    "lng": -119.23,
+    "amenities": "restrooms, picnic, pet area",
+    "state": "OR"
+  },
+  {
+    "name": "Deadman Pass Rest Area",
+    "type": "rest_area",
+    "highway": "I-84",
+    "lat": 45.676,
+    "lng": -118.685,
+    "amenities": "restrooms, scenic overlook",
+    "state": "OR"
+  },
+  {
+    "name": "Baker City Rest Area",
+    "type": "rest_area",
+    "highway": "I-84",
+    "lat": 44.7805,
+    "lng": -117.835,
+    "amenities": "restrooms, picnic",
+    "state": "OR"
+  },
+  {
+    "name": "Ontario Rest Area",
+    "type": "rest_area",
+    "highway": "I-84",
+    "lat": 44.022,
+    "lng": -117.025,
+    "amenities": "restrooms, picnic, info",
+    "state": "OR"
+  },
+  {
+    "name": "Peters Creek Rest Area",
+    "type": "rest_area",
+    "highway": "US 97",
+    "lat": 45.718,
+    "lng": -120.668,
+    "amenities": "restrooms, picnic",
+    "state": "OR"
+  },
+  {
+    "name": "Bend Visitor Information",
+    "type": "rest_area",
+    "highway": "US 97",
+    "lat": 44.0581,
+    "lng": -121.3153,
+    "amenities": "info, restrooms",
+    "state": "OR"
+  },
+  {
+    "name": "Crescent Lake Junction Rest Area",
+    "type": "rest_area",
+    "highway": "US 97",
+    "lat": 43.4767,
+    "lng": -121.987,
+    "amenities": "restrooms, picnic",
+    "state": "OR"
+  },
+  {
+    "name": "Chemult Rest Area",
+    "type": "rest_area",
+    "highway": "US 97",
+    "lat": 43.22,
+    "lng": -121.78,
+    "amenities": "restrooms",
+    "state": "OR"
+  },
+  {
+    "name": "Government Camp Visitor Info",
+    "type": "rest_area",
+    "highway": "US 26",
+    "lat": 45.3017,
+    "lng": -121.7536,
+    "amenities": "info, restrooms, Mt Hood gateway",
+    "state": "OR"
+  },
+  {
+    "name": "Sandy Wayside",
+    "type": "rest_area",
+    "highway": "US 26",
+    "lat": 45.3982,
+    "lng": -122.2602,
+    "amenities": "restrooms, picnic",
+    "state": "OR"
+  },
+  {
+    "name": "Yaquina Bay State Recreation Site",
+    "type": "rest_area",
+    "highway": "US 101",
+    "lat": 44.6232,
+    "lng": -124.0596,
+    "amenities": "restrooms, picnic, scenic",
+    "state": "OR"
+  },
+  {
+    "name": "Cape Blanco State Park (day use)",
+    "type": "rest_area",
+    "highway": "US 101",
+    "lat": 42.839,
+    "lng": -124.5604,
+    "amenities": "restrooms, picnic, lighthouse",
+    "state": "OR"
+  },
+  {
+    "name": "Pilot Travel Center — Troutdale",
+    "type": "truck_stop",
+    "highway": "I-84 exit 17",
+    "lat": 45.545,
+    "lng": -122.385,
+    "amenities": "fuel, food, showers, parking",
+    "state": "OR"
+  },
+  {
+    "name": "TA Travel Center — Troutdale",
+    "type": "truck_stop",
+    "highway": "I-84 exit 17",
+    "lat": 45.548,
+    "lng": -122.388,
+    "amenities": "fuel, food, showers, parking",
+    "state": "OR"
+  },
+  {
+    "name": "Pilot Travel Center — Aurora",
+    "type": "truck_stop",
+    "highway": "I-5 exit 278",
+    "lat": 45.24,
+    "lng": -122.772,
+    "amenities": "fuel, food, parking",
+    "state": "OR"
+  },
+  {
+    "name": "Love's Travel Stop — Albany",
+    "type": "truck_stop",
+    "highway": "I-5 exit 233",
+    "lat": 44.65,
+    "lng": -123.085,
+    "amenities": "fuel, food, showers, parking",
+    "state": "OR"
+  },
+  {
+    "name": "Pilot Travel Center — Coburg",
+    "type": "truck_stop",
+    "highway": "I-5 exit 199",
+    "lat": 44.137,
+    "lng": -123.056,
+    "amenities": "fuel, food, showers, parking",
+    "state": "OR"
+  },
+  {
+    "name": "Love's Travel Stop — Central Point",
+    "type": "truck_stop",
+    "highway": "I-5 exit 33",
+    "lat": 42.376,
+    "lng": -122.918,
+    "amenities": "fuel, food, showers, parking",
+    "state": "OR"
+  },
+  {
+    "name": "Pilot Travel Center — Boardman",
+    "type": "truck_stop",
+    "highway": "I-84 exit 164",
+    "lat": 45.833,
+    "lng": -119.718,
+    "amenities": "fuel, food, showers, parking",
+    "state": "OR"
+  },
+  {
+    "name": "Love's Travel Stop — Ontario",
+    "type": "truck_stop",
+    "highway": "I-84 exit 376",
+    "lat": 44.019,
+    "lng": -117.019,
+    "amenities": "fuel, food, showers, parking",
+    "state": "OR"
+  },
+  {
+    "name": "Flying J — Pendleton",
+    "type": "truck_stop",
+    "highway": "I-84 exit 209",
+    "lat": 45.65,
+    "lng": -118.78,
+    "amenities": "fuel, food, parking",
+    "state": "OR"
+  },
+  {
+    "name": "Love's Travel Stop — Madras",
+    "type": "truck_stop",
+    "highway": "US 97",
+    "lat": 44.636,
+    "lng": -121.13,
+    "amenities": "fuel, food, parking",
+    "state": "OR"
+  },
+  {
+    "name": "Pilot Travel Center — Bend",
+    "type": "truck_stop",
+    "highway": "US 97",
+    "lat": 44.07,
+    "lng": -121.305,
+    "amenities": "fuel, food, parking",
+    "state": "OR"
+  }
+]

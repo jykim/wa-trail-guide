@@ -40,12 +40,14 @@ def main() -> int:
         is_fresh = days is not None and days <= FRESH_DAYS
 
         prev_acc = s.get("prev_accessibility") or ""
+        prev_sum = s.get("prev_summary") or ""
+        change_reason = s.get("change_reason") or ""
         changed_at = s.get("changed_at") or ""
         days_since_change = _days_since(changed_at)
-        is_recently_changed = (
-            bool(prev_acc)
-            and days_since_change is not None
+        is_recently_changed = bool(
+            days_since_change is not None
             and days_since_change <= CHANGE_WINDOW_DAYS
+            and (prev_acc or prev_sum or change_reason in ("new", "new_report"))
         )
 
         drive: dict = {}
@@ -72,6 +74,8 @@ def main() -> int:
                 "is_stale": is_stale,
                 "is_fresh": is_fresh,
                 "prev_accessibility": prev_acc,
+                "prev_summary": prev_sum,
+                "change_reason": change_reason,
                 "changed_at": changed_at,
                 "days_since_change": days_since_change,
                 "is_recently_changed": is_recently_changed,
@@ -80,17 +84,53 @@ def main() -> int:
 
     regions = sorted({t["region"] for t in trails})
 
-    data_blob = {"trails": merged, "regions": regions}
-    now = datetime.now(timezone.utc).astimezone()
+    camps_path = DATA / "campgrounds.json"
+    campgrounds = []
+    if camps_path.exists():
+        try:
+            campgrounds = json.loads(camps_path.read_text())
+        except json.JSONDecodeError:
+            campgrounds = []
 
+    rest_path = DATA / "rest_areas.json"
+    rest_areas = []
+    if rest_path.exists():
+        try:
+            rest_areas = json.loads(rest_path.read_text())
+        except json.JSONDecodeError:
+            rest_areas = []
+
+    or_trails_path = DATA / "oregon_trails.json"
+    oregon_trails = []
+    if or_trails_path.exists():
+        try:
+            oregon_trails = json.loads(or_trails_path.read_text())
+        except json.JSONDecodeError:
+            oregon_trails = []
+
+    data_blob = {
+        "trails": merged,
+        "regions": regions,
+        "campgrounds": campgrounds,
+        "rest_areas": rest_areas,
+        "oregon_trails": oregon_trails,
+    }
     env = Environment(
         loader=FileSystemLoader(str(TEMPLATES)),
         autoescape=select_autoescape(["html", "xml"]),
     )
+
+    # "Updated" reflects when the trail data was last refreshed (status.json mtime),
+    # not when this page happened to be re-rendered.
+    status_file = DATA / "status.json"
+    updated_dt = datetime.fromtimestamp(
+        status_file.stat().st_mtime, tz=timezone.utc
+    ).astimezone()
+    generated_at = updated_dt.strftime("%Y-%m-%d %H:%M %Z")
+
     tpl = env.get_template("dashboard.html.j2")
     html = tpl.render(
-        week_of=now.strftime("%Y-%m-%d"),
-        generated_at=now.strftime("%Y-%m-%d %H:%M %Z"),
+        generated_at=generated_at,
         trail_count=len(merged),
         data_json=json.dumps(data_blob, ensure_ascii=False),
     )
@@ -99,6 +139,15 @@ def main() -> int:
     out = DIST / "index.html"
     out.write_text(html)
     print(f"[render] wrote {out} ({len(html)/1024:.1f} KB, {len(merged)} trails)", file=sys.stderr)
+
+    # Admin page: published but unlinked from the UI (reachable only by direct URL,
+    # /admin or /admin.html — see the server's path rewrite). Still password-gated.
+    admin_tpl = env.get_template("admin.html.j2")
+    admin_html = admin_tpl.render(generated_at=generated_at, trail_count=len(merged))
+    admin_out = DIST / "admin.html"
+    admin_out.write_text(admin_html)
+    print(f"[render] wrote {admin_out} ({len(admin_html)/1024:.1f} KB)", file=sys.stderr)
+
     return 0
 
 

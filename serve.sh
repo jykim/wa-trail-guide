@@ -7,9 +7,13 @@ cd "$PROJECT_DIR"
 
 export PATH="$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin"
 
-# Load OPENAI_API_KEY so /api/add can summarize.
-if [ -z "${OPENAI_API_KEY:-}" ] && [ -f .env ]; then
+# Load secrets. Project .env first (DASHBOARD_PASSWORD), then ~/dotEnv
+# (canonical OPENAI_API_KEY + other shared keys; wins on overlap).
+if [ -f .env ]; then
   set -a; source .env; set +a
+fi
+if [ -f "$HOME/dotEnv" ]; then
+  set -a; source "$HOME/dotEnv"; set +a
 fi
 
 exec uv run python src/server.py

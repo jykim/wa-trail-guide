@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>About — WA Trail Finder</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+  .prose h2 { font-size: 1.25rem; font-weight: 600; margin-top: 2rem; margin-bottom: 0.5rem; color: #0f172a; }
+  .prose h3 { font-size: 1rem;    font-weight: 600; margin-top: 1.25rem; margin-bottom: 0.4rem; color: #1e293b; }
+  .prose p, .prose li { line-height: 1.55; }
+  .prose ul { list-style: disc; padding-left: 1.4rem; margin: 0.6rem 0; }
+  .prose code { background: #f1f5f9; padding: 1px 5px; border-radius: 4px; font-size: 0.85em; }
+  .prose a  { color: #1d4ed8; text-decoration: underline; }
+  .prose table { border-collapse: collapse; margin: 0.6rem 0; font-size: 0.875rem; }
+  .prose th, .prose td { border: 1px solid #e2e8f0; padding: 0.4rem 0.7rem; text-align: left; vertical-align: top; }
+  .prose th { background: #f8fafc; font-weight: 600; }
+  .icon { display: inline-flex; align-items: center; justify-content: center; vertical-align: -3px; }
+  .dot {
+    width: 16px; height: 16px; border-radius: 50%;
+    border: 2px solid white; box-shadow: 0 0 0 1px rgba(0,0,0,0.3);
+  }
+  .dot-open { background: #10b981; }
+  .dot-snow { background: #f59e0b; }
+  .dot-closed { background: #ef4444; }
+  .dot-unknown { background: #9ca3af; }
+  .dot-fresh { box-shadow: 0 0 0 2px #1f2937; }
+  .sq {
+    width: 12px; height: 12px;
+    border: 1.5px solid white; box-shadow: 0 0 0 1px rgba(0,0,0,0.4);
+  }
+  .sq-nps   { background: #7c3aed; }
+  .sq-usfs  { background: #15803d; }
+  .sq-state { background: #0369a1; }
+  .sq-other { background: #6b7280; }
+  .stop {
+    width: 22px; height: 22px; border-radius: 50%;
+    background: white; border: 2px solid currentColor;
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.25);
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 13px; line-height: 1; vertical-align: -7px;
+  }
+  .stop-rest { color: #1d4ed8; }
+  .stop-truck { color: #b91c1c; }
+  .or-dot { width: 14px; height: 14px; border-radius: 50%; background: #2563eb; border: 2px solid white; box-shadow: 0 0 0 1px rgba(0,0,0,0.4); }
+  .pill { display: inline-block; padding: 1px 8px; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; }
+  .pill-open      { background: #ecfdf5; color: #065f46; }
+  .pill-snow      { background: #fffbeb; color: #92400e; }
+  .pill-closed    { background: #fef2f2; color: #991b1b; }
+  .pill-stale     { background: #f3f4f6; color: #4b5563; }
+  .pill-new       { background: #d1fae5; color: #065f46; }
+  .pill-report    { background: #dbeafe; color: #1e40af; }
+  .pill-updated   { background: #fef3c7; color: #92400e; }
+  .pill-summary   { background: #e2e8f0; color: #334155; }
+</style>
+</head>
+<body class="bg-slate-50 text-slate-900">
+
+<header class="bg-white border-b border-slate-200 px-6 py-3 flex items-baseline gap-4 sticky top-0 z-10">
+  <h1 class="text-lg font-semibold">
+    <a href="/" class="hover:text-blue-700">WA Trail Finder</a>
+    <span class="text-slate-400 font-normal"> · About</span>
+  </h1>
+  <a href="/" class="ml-auto text-sm text-blue-700 hover:underline">← Back to dashboard</a>
+</header>
+
+<main class="prose max-w-3xl mx-auto px-6 py-6 text-slate-700 text-sm">
+
+  <p>
+    A personal weekly dashboard summarizing the current state of <strong>Washington</strong> (and select <strong>Oregon</strong>) hiking trails,
+    plus nearby campgrounds and rest stops. The map is centered on WA / OR; trip-report status comes from
+    <a href="https://www.wta.org/">wta.org</a> and is summarized by an LLM.
+  </p>
+
+  <h2>What's on the map</h2>
+
+  <h3>Trail markers <span class="text-slate-400 font-normal text-sm">(circles)</span></h3>
+  <table>
+    <thead><tr><th>Icon</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td><span class="icon"><span class="dot dot-open"></span></span></td><td><strong>Open</strong> — fit hiker, regular boots, no special gear.</td></tr>
+      <tr><td><span class="icon"><span class="dot dot-snow"></span></span></td><td><strong>Snow gear</strong> — traction needed on the main route a typical hiker walks (microspikes / crampons / snowshoes / ice axe), route-finding above continuous snow, or impassable creek crossings. Snow only above the normal turnaround stays Open.</td></tr>
+      <tr><td><span class="icon"><span class="dot dot-closed"></span></span></td><td><strong>Closed</strong> — trail or access impassable: road washout, severe damage, active fire closure, etc.</td></tr>
+      <tr><td><span class="icon"><span class="dot dot-unknown"></span></span></td><td><strong>Stale / unknown</strong> — last trip report is over 30 days old, so the classification is no longer reliable.</td></tr>
+      <tr><td><span class="icon"><span class="dot dot-open dot-fresh"></span></span></td><td><strong>Dark outer ring</strong> — a trip report came in within the last 7 days. Combines with any of the colors above.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Campground markers <span class="text-slate-400 font-normal text-sm">(small squares, "Camps" toggle)</span></h3>
+  <table>
+    <thead><tr><th>Icon</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td><span class="icon"><span class="sq sq-nps"></span></span></td><td><strong>NPS</strong> — National Park Service (Olympic, Rainier, North Cascades, etc.)</td></tr>
+      <tr><td><span class="icon"><span class="sq sq-usfs"></span></span></td><td><strong>USFS</strong> — Forest Service (Mt Baker–Snoqualmie, Okanogan–Wenatchee, Gifford Pinchot, etc.)</td></tr>
+      <tr><td><span class="icon"><span class="sq sq-state"></span></span></td><td><strong>State Parks</strong> — Washington or Oregon State Parks</td></tr>
+      <tr><td><span class="icon"><span class="sq sq-other"></span></span></td><td><strong>Other</strong> — county, city, DNR, BLM, USACE, tribal, etc.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Rest area / truck stop markers <span class="text-slate-400 font-normal text-sm">("Stops" toggle)</span></h3>
+  <table>
+    <thead><tr><th>Icon</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td><span class="stop stop-rest">🚗</span></td><td><strong>Rest area</strong> — WSDOT (WA) or ODOT (OR) safety rest area. Restrooms, picnic, sometimes RV dump or info.</td></tr>
+      <tr><td><span class="stop stop-truck">🛻</span></td><td><strong>Truck stop</strong> — Pilot / Flying J / Love's / TA. Fuel, food, showers, parking.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Oregon trail markers <span class="text-slate-400 font-normal text-sm">("OR Trails" toggle)</span></h3>
+  <table>
+    <thead><tr><th>Icon</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td><span class="icon"><span class="or-dot"></span></span></td><td><strong>Oregon trail</strong> — no WTA trip reports (different source), so no green/amber/red status. Click for distance, elevation gain, season, and a link to the source page.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Card badges (left pane)</h2>
+  <table>
+    <thead><tr><th>Badge</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td><span class="pill pill-open">Open</span> / <span class="pill pill-snow">Snow gear</span> / <span class="pill pill-closed">Closed</span></td><td>Current accessibility derived by GPT from the latest trip reports.</td></tr>
+      <tr><td><span class="pill pill-stale">Stale</span></td><td>No trip report in 30+ days; the classification is no longer trustworthy.</td></tr>
+      <tr><td><span class="pill pill-new">✦ New</span></td><td>Trail was just added to the dashboard.</td></tr>
+      <tr><td><span class="pill pill-report">Report</span></td><td>A new trip report came in within the last 7 days.</td></tr>
+      <tr><td><span class="pill pill-updated">Updated</span></td><td>Accessibility classification just flipped (e.g. snow_gear → open), or the GPT summary text materially changed.</td></tr>
+    </tbody>
+  </table>
+
+  <h2 id="status">How trail status is determined</h2>
+  <p>
+    A trail's <strong>Open / Snow gear / Closed</strong> status isn't set by hand — it's classified by
+    GPT-4o-mini from the <strong>3 most recent WTA trip reports</strong> for that trail. The model reads
+    each report's hike date, "Beware of" issues, feature flags, and body text, then picks the single
+    best-fit bucket using fixed rules:
+  </p>
+  <ul>
+    <li><span class="pill pill-open">Open</span> — hikeable by a fit hiker in regular boots with no special gear. Minor mud, blowdowns, or bugs don't disqualify it.</li>
+    <li><span class="pill pill-snow">Snow gear</span> — on the <strong>main route a typical hiker actually walks</strong>, traction or snow skills are needed: microspikes, crampons, snowshoes, or an ice axe; significant route-finding above continuous snow; or a creek crossing that's impassable without a workaround. Snow only above the normal turnaround (e.g. a summit scramble most skip) stays Open.</li>
+    <li><span class="pill pill-closed">Closed</span> — impassable for a typical hiker: road washout with no walkable detour, severe trail damage, active fire closure, or access not yet open.</li>
+  </ul>
+  <p>
+    <strong>The most recent report wins.</strong> Report 1 (newest) describes current conditions; older
+    reports are only used for facts the latest one doesn't contradict. If the newest report says a hazard
+    melted out or was cleared, that overrides older reports that still mention it.
+  </p>
+
+  <h3>Why a trail flips from Open to Snow gear</h3>
+  <p>Status tracks the <em>latest</em> conditions, so it changes whenever a newer report describes something different. A common case in spring and early summer:</p>
+  <ul>
+    <li>Last week's report covered the lower trail in good shape → <span class="pill pill-open">Open</span>.</li>
+    <li>This week a hiker pushes higher (or fresh snow falls) and reports post-holing or "microspikes needed above 4,500 ft" → the model reclassifies to <span class="pill pill-snow">Snow gear</span> and the card gets an <span class="pill pill-updated">Updated</span> badge.</li>
+  </ul>
+  <p>
+    The reverse happens as snow melts out: once recent reports stop mentioning traction or snow on trail,
+    it flips back to <span class="pill pill-open">Open</span>. In the <em>Recent updates</em> panel the date
+    shown is the date of the report that drove the change — not when our refresh happened to notice it.
+  </p>
+
+  <h2>How data is collected</h2>
+
+  <h3>Trails</h3>
+  <ul>
+    <li><strong>Auto regional top-N</strong>: each week, every WTA region is queried and the top 5 trails per region (min 4 stars, min 20 votes) are kept. From <a href="https://www.wta.org/go-outside/hikes">wta.org/go-outside/hikes</a>.</li>
+    <li><strong>Curated extras</strong>: trails added on the fly via the dashboard's <em>Search</em> box. Adding pulls the trail page, fetches the latest 3 trip reports, generates a GPT summary, computes drive time, and merges in — about 15–20 seconds end to end.</li>
+  </ul>
+
+  <h3>Trip reports</h3>
+  <p>The <strong>latest 3 trip reports</strong> per trail are scraped from WTA's <code>@@related_tripreport_listing</code> endpoint at 1 req/sec with an identifying User-Agent. Each report carries hike date, author, "Beware of" issues, feature flags, and body text.</p>
+
+  <h3>Trail status (GPT)</h3>
+  <p>For each trail with a new latest report, GPT-4o-mini is given the trail metadata and the latest 3 reports, and asked to return:</p>
+  <ul>
+    <li><strong>accessibility</strong> (open / snow_gear / closed)</li>
+    <li><strong>accessibility_reason</strong> (one short sentence)</li>
+    <li><strong>snow_line_ft</strong> (integer if a report mentions it)</li>
+    <li><strong>road_status</strong> (clear / rough / closed / unknown)</li>
+    <li><strong>bugs</strong>, <strong>wildflowers</strong></li>
+    <li><strong>summary</strong> — one tight sentence anchored to the most decision-relevant fact from the latest report</li>
+    <li><strong>last_report_date</strong></li>
+  </ul>
+  <p>The most recent report is authoritative — older reports are only used for facts the latest one doesn't contradict. Results are cached by the latest report's URL, so a trail is only re-summarized when a genuinely new report arrives.</p>
+
+  <h3>Drive times</h3>
+  <p>From both <strong>Seattle</strong> and <strong>Bellevue</strong>, computed once per trailhead via the public <a href="https://router.project-osrm.org/">OSRM</a> driving profile. Cached forever by (lat, lng). Note: OSRM doesn't include ferries, so Whidbey / Olympic Peninsula times are conservative (e.g. Ebey's Landing shows ~140 min via Deception Pass vs. ~90 min via Mukilteo ferry).</p>
+
+  <h3>Campgrounds (~419)</h3>
+  <p>Public-agency campgrounds in Washington and Oregon, curated from these sources:</p>
+  <ul>
+    <li><a href="https://www.recreation.gov/">recreation.gov</a> — federal campgrounds (NPS, USFS, USACE, BLM)</li>
+    <li><a href="https://parks.wa.gov/">parks.wa.gov</a> — Washington State Parks</li>
+    <li><a href="https://stateparks.oregon.gov/">stateparks.oregon.gov</a> — Oregon State Parks</li>
+    <li><a href="https://www.nps.gov/olym/">nps.gov</a> — Olympic, Mount Rainier, North Cascades national parks</li>
+    <li><a href="https://www.fs.usda.gov/">fs.usda.gov</a> — National Forests (Mt Baker–Snoqualmie, Olympic, Gifford Pinchot, Okanogan–Wenatchee, Gifford Pinchot)</li>
+    <li><a href="https://www.dnr.wa.gov/managed-lands/recreation">dnr.wa.gov</a> — WA Department of Natural Resources recreation sites</li>
+  </ul>
+  <p>Per entry: name, managing agency, lat/lng, location, elevation, season, site count, facilities, fee tier, activities, phone, reservable.</p>
+
+  <h3>Rest areas / truck stops (76)</h3>
+  <p>Hand-curated WSDOT and ODOT safety rest areas + major truck stops (Pilot, Flying J, Love's, TA) along I-5, I-90, I-84, I-82, US 2, US 97, US 101, US 26, US 395.</p>
+
+  <h3>Oregon trails (~69)</h3>
+  <p>Curated from public sources:</p>
+  <ul>
+    <li><a href="https://www.oregonhikers.org/field_guide/Must_See_Hikes">oregonhikers.org</a> — Must-See Hikes list and linked Trailhead pages (for GPS), scraped at 1 req/sec.</li>
+    <li><a href="https://stateparks.oregon.gov/">stateparks.oregon.gov</a> and <a href="https://www.fs.usda.gov/deschutes">fs.usda.gov/deschutes</a> — Bend / Central Oregon trailhead coordinates and trail descriptions.</li>
+  </ul>
+
+  <h2>Filters and toggles</h2>
+  <ul>
+    <li><strong>Status pills</strong> (Open / Snow gear / Closed / All) — strict; "Stale" trails are excluded from the specific-status filters (they show under <em>All</em> with the gray Stale badge).</li>
+    <li><strong>Region select</strong> — 11 WTA regions.</li>
+    <li><strong>Drive select</strong> — Any / ≤1h / ≤2h / ≤3h / ≤4h / ≤5h, uses <code>min(Seattle, Bellevue)</code>.</li>
+    <li><strong>Sort</strong> — Rating · Most recent · Drive time · Volume · Name.</li>
+    <li><strong>Search</strong> — substring match by trail name or subregion. If nothing matches locally, click <em>Search wta.org</em> to look it up live and <em>Add</em> any result.</li>
+    <li><strong>Layers</strong> — toggle Camps, Stops, OR Trails on / off independently. State persists in localStorage.</li>
+  </ul>
+
+  <h2>Recent updates panel</h2>
+  <p>Folded by default; click the amber bar to expand. Shows trails with any of:</p>
+  <ul>
+    <li><span class="pill pill-report">Report</span> — a new trip report came in within the last 7 days</li>
+    <li><span class="pill pill-updated">Updated</span> — accessibility classification flipped, or the summary text materially changed</li>
+    <li><span class="pill pill-summary">Summary updated</span> — same accessibility bucket, but the GPT description shifted (new report)</li>
+    <li><span class="pill pill-new">✦ Added</span> — trail was added to the dashboard within the last 14 days</li>
+  </ul>
+  <p>The sort dropdown drives both the updates list <em>and</em> the main LHS trail cards in sync.</p>
+
+  <h2>Update button</h2>
+  <p>The "Update status" button at the top right re-scrapes trip reports for every trail, re-summarizes any that have a new latest report, and re-renders the dashboard. Typical wall time is 90–120 seconds. The request is async (the server returns a job ID immediately, the dashboard polls every 4 seconds) so reverse proxies like Cloudflare don't time out.</p>
+  <p>It's password-gated because it spends OpenAI tokens. Enter the password once and it's remembered in localStorage for 7 days.</p>
+
+  <h2>Privacy &amp; etiquette</h2>
+  <ul>
+    <li>WTA scraping is throttled to 1 req/sec and carries a <code>wta-status/0.1 (personal weekly dashboard)</code> User-Agent.</li>
+    <li>OSRM uses the public-server profile; results are cached forever (coords don't change).</li>
+    <li>OpenAI calls are minimized via a per-trail cache signature — only re-summarized when a new latest report arrives. Cost on a warm cache is ~$0.01 per refresh.</li>
+    <li>Don't redistribute scraped trip-report content — it belongs to the WTA community.</li>
+    <li>Status classification by GPT-4o-mini is <strong>not life-safety advice</strong>. Always read the linked WTA reports before going.</li>
+  </ul>
+
+  <h2>Architecture</h2>
+  <p>Five-step pipeline. Each step reads the previous step's JSON and writes its own, so steps are debuggable and re-runnable in isolation.</p>
+  <ul>
+    <li><code>scrape_trails.py</code> → <code>data/trails.json</code> (top-N per region + curated extras + JSON-LD coords)</li>
+    <li><code>compute_drive.py</code> → <code>data/drive_cache.json</code> (OSRM times, keyed by lat/lng)</li>
+    <li><code>scrape_reports.py</code> → <code>data/reports.json</code> (last 3 trip reports per trail)</li>
+    <li><code>summarize.py</code> → <code>data/status.json</code> (GPT-derived per-trail structured status)</li>
+    <li><code>render.py</code> → <code>dist/index.html</code> (Jinja → Tailwind + Alpine + Leaflet single-page UI)</li>
+  </ul>
+  <p>Plus <code>server.py</code> — a small ThreadingHTTPServer that serves <code>dist/</code> and exposes <code>/api/search</code>, <code>/api/add</code>, <code>/api/refresh</code> for the live dashboard interactions.</p>
+
+  <h2>Source</h2>
+  <p>
+    Source code: <a href="https://github.com/jykim/wa-trail-guide">github.com/jykim/wa-trail-guide</a>.
+    Trail data: <a href="https://www.wta.org/">wta.org</a>.
+    Oregon trails: <a href="https://www.oregonhikers.org/">oregonhikers.org</a>.
+    Map tiles: <a href="https://www.openstreetmap.org/copyright">© OpenStreetMap contributors</a>.
+    Routing: <a href="https://www.openstreetmap.org/about">OSRM public profile</a>.
+  </p>
+
+  <p class="mt-8 text-xs text-slate-400 text-center">
+    Personal use — not affiliated with WTA, Olympic / Mt Rainier / North Cascades National Parks, USFS, ODOT, WSDOT, or any other agency mentioned.
+  </p>
+
+</main>
+
+</body>
+</html>

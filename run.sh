@@ -7,9 +7,13 @@ cd "$PROJECT_DIR"
 
 export PATH="$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin"
 
-# Pull OPENAI_API_KEY from .env if not in env. zshrc isn't sourced by launchd.
-if [ -z "${OPENAI_API_KEY:-}" ] && [ -f .env ]; then
+# Load secrets. Project .env first, then ~/dotEnv (canonical OPENAI_API_KEY;
+# wins on overlap). zshrc isn't sourced by launchd, so we do this explicitly.
+if [ -f .env ]; then
   set -a; source .env; set +a
+fi
+if [ -f "$HOME/dotEnv" ]; then
+  set -a; source "$HOME/dotEnv"; set +a
 fi
 
 LOG_DIR="$PROJECT_DIR/logs"
