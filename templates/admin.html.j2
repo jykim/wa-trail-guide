@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>WA Trail Finder — Admin</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+</style>
+</head>
+<body class="bg-slate-50 text-slate-900">
+<div x-data="admin()" x-init="init()" class="max-w-2xl mx-auto px-4 py-6">
+
+  <header class="flex items-baseline gap-3 mb-1">
+    <h1 class="text-lg font-semibold tracking-tight">WA Trail Finder — Admin</h1>
+    <a href="/" class="ml-auto text-xs text-slate-600 hover:text-blue-700">← Back to map</a>
+  </header>
+  <p class="text-xs text-slate-500 mb-5">Last updated {{ generated_at }} · {{ trail_count }} trails</p>
+
+  <!-- Inline password prompt (gates /api/refresh and /api/subscribers) -->
+  <div x-show="authPromptOpen"
+       class="mb-4 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg flex flex-wrap items-center gap-2">
+    <span class="text-xs font-semibold text-amber-900">Admin password required:</span>
+    <input type="password" x-model="authPromptValue"
+           @keydown.enter.prevent="authPromptSubmit()"
+           @keydown.escape.prevent="authPromptCancel()"
+           x-ref="authInput"
+           class="text-xs border border-amber-300 rounded px-2 py-1 bg-white w-44"
+           placeholder="Password" />
+    <button @click="authPromptSubmit()"
+            class="text-xs px-2.5 py-1 rounded bg-amber-700 text-white hover:bg-amber-800">Submit</button>
+    <button @click="authPromptCancel()"
+            class="text-xs text-amber-700 hover:text-amber-900 underline">Cancel</button>
+    <span class="text-[10px] text-amber-700 ml-auto">Saved 7 days in this browser</span>
+  </div>
+
+  <!-- Update status -->
+  <section class="bg-white border border-slate-200 rounded-lg p-4 mb-5 shadow-sm">
+    <h2 class="text-sm font-semibold text-slate-900 mb-1">Trail status</h2>
+    <p class="text-xs text-slate-500 mb-3">Re-scrape recent trip reports from wta.org and re-summarize. Takes 1–2 minutes.</p>
+    <button @click="refreshStatus()"
+            :disabled="refreshState === 'running'"
+            class="text-sm px-3 py-1.5 rounded border border-slate-300 bg-white hover:bg-slate-50 disabled:opacity-60 disabled:cursor-not-allowed inline-flex items-center gap-2">
+      <svg x-show="refreshState !== 'running'" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+      <svg x-show="refreshState === 'running'" class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" opacity="0.25"></circle><path d="M22 12a10 10 0 0 1-10 10" stroke-linecap="round"></path></svg>
+      <span x-text="refreshState === 'running' ? 'Refreshing…' : 'Update status'"></span>
+    </button>
+    <label class="mt-3 flex items-start gap-2 text-xs text-slate-600 cursor-pointer">
+      <input type="checkbox" x-model="onlyNonOpen" class="mt-0.5" />
+      <span>
+        <span class="font-medium text-slate-700">Only re-check non-open trails</span>
+        — skips the LLM for trails currently marked Open (faster, cheaper). Won't catch open→closed changes until a full refresh.
+      </span>
+    </label>
+    <p x-show="refreshState === 'error'" class="mt-2 text-xs text-red-700" x-text="refreshError"></p>
+    <p x-show="refreshState === 'done'" class="mt-2 text-xs text-emerald-700">
+      Done. <a href="/" class="underline">View the updated map →</a>
+    </p>
+  </section>
+
+  <!-- Subscribers -->
+  <section class="bg-white border border-slate-200 rounded-lg p-4 shadow-sm">
+    <div class="flex items-center gap-2 mb-3">
+      <h2 class="text-sm font-semibold text-slate-900">Registered emails</h2>
+      <span class="text-xs text-slate-500" x-show="subState === 'ok'" x-text="'(' + subscribers.length + ')'"></span>
+      <button @click="loadSubscribers()"
+              :disabled="subState === 'loading'"
+              class="ml-auto text-xs px-2 py-1 rounded border border-slate-300 bg-white hover:bg-slate-50 disabled:opacity-60"
+              x-text="subState === 'loading' ? 'Loading…' : 'Reload'"></button>
+    </div>
+
+    <p x-show="subState === 'locked'" class="text-xs text-slate-500">
+      <button @click="loadSubscribers()" class="underline text-blue-700">Enter admin password</button>
+      to view the subscriber list.
+    </p>
+    <p x-show="subState === 'error'" class="text-xs text-red-700" x-text="subError"></p>
+    <p x-show="subState === 'ok' && subscribers.length === 0" class="text-xs text-slate-500">No registered emails yet.</p>
+
+    <div x-show="subState === 'ok' && subscribers.length > 0" class="divide-y divide-slate-100">
+      <template x-for="(s, i) in subscribers" :key="s.email + ':' + i">
+        <div class="py-1.5 flex items-baseline gap-2 text-sm">
+          <span class="text-slate-400 text-xs w-6 text-right" x-text="i + 1"></span>
+          <a :href="'mailto:' + s.email" class="text-slate-800 hover:text-blue-700" x-text="s.email"></a>
+          <span class="ml-auto text-[11px] text-slate-400" x-text="formatDate(s.added)"></span>
+        </div>
+      </template>
+    </div>
+  </section>
+
+</div>
+
+<script>
+  function admin() {
+    return {
+      refreshState: 'idle',    // idle | running | error | done
+      refreshError: '',
+      onlyNonOpen: false,
+      subscribers: [],
+      subState: 'idle',        // idle | loading | locked | error | ok
+      subError: '',
+      authPromptOpen: false,
+      authPromptValue: '',
+      _pendingAuthResolve: null,
+      _AUTH_KEY: 'wta-status:auth',
+      _AUTH_TTL_MS: 7 * 24 * 60 * 60 * 1000, // 7 days
+      init() {
+        this.loadSubscribers();
+      },
+      formatDate(iso) {
+        if (!iso) return '';
+        const d = new Date(iso);
+        if (isNaN(d.getTime())) return iso;
+        return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+      },
+      _getAuthPw() {
+        try {
+          const raw = localStorage.getItem(this._AUTH_KEY);
+          if (!raw) return '';
+          const obj = JSON.parse(raw);
+          if (!obj || !obj.password || !obj.expiresAt) return '';
+          if (Date.now() > obj.expiresAt) {
+            localStorage.removeItem(this._AUTH_KEY);
+            return '';
+          }
+          return obj.password;
+        } catch (e) { return ''; }
+      },
+      _setAuthPw(pw) {
+        try {
+          localStorage.setItem(this._AUTH_KEY,
+            JSON.stringify({ password: pw, expiresAt: Date.now() + this._AUTH_TTL_MS }));
+        } catch (e) {}
+      },
+      _clearAuthPw() {
+        try { localStorage.removeItem(this._AUTH_KEY); } catch (e) {}
+      },
+      _askPassword() {
+        return new Promise(resolve => {
+          this._pendingAuthResolve = resolve;
+          this.authPromptValue = '';
+          this.authPromptOpen = true;
+          requestAnimationFrame(() => {
+            const el = this.$refs && this.$refs.authInput;
+            if (el && el.focus) el.focus();
+          });
+        });
+      },
+      authPromptSubmit() {
+        const v = (this.authPromptValue || '').trim();
+        this.authPromptOpen = false;
+        if (this._pendingAuthResolve) {
+          this._pendingAuthResolve(v || null);
+          this._pendingAuthResolve = null;
+        }
+      },
+      authPromptCancel() {
+        this.authPromptOpen = false;
+        if (this._pendingAuthResolve) {
+          this._pendingAuthResolve(null);
+          this._pendingAuthResolve = null;
+        }
+      },
+      async _authedFetch(url, init) {
+        init = init || {};
+        init.headers = Object.assign({}, init.headers || {});
+        const pw = this._getAuthPw();
+        if (pw) init.headers['X-Dashboard-Password'] = pw;
+        let resp = await fetch(url, init);
+        if (resp.status !== 401) return resp;
+        const supplied = await this._askPassword();
+        if (!supplied) return resp;
+        init.headers['X-Dashboard-Password'] = supplied;
+        resp = await fetch(url, init);
+        if (resp.status === 401) {
+          this._clearAuthPw();
+        } else {
+          this._setAuthPw(supplied);
+        }
+        return resp;
+      },
+      async loadSubscribers() {
+        this.subState = 'loading';
+        this.subError = '';
+        try {
+          const resp = await this._authedFetch('/api/subscribers');
+          if (resp.status === 401) {
+            this.subState = 'locked';
+            return;
+          }
+          const data = await resp.json().catch(() => ({}));
+          if (!resp.ok) throw new Error(data.error || ('HTTP ' + resp.status));
+          this.subscribers = (data.subscribers || []).slice().sort((a, b) => {
+            const ta = a.added || '', tb = b.added || '';
+            return ta < tb ? 1 : ta > tb ? -1 : 0; // newest first
+          });
+          this.subState = 'ok';
+        } catch (e) {
+          this.subState = 'error';
+          this.subError = 'Could not load subscribers: ' + e.message + ' (is server.py running?)';
+        }
+      },
+      async refreshStatus() {
+        if (this.refreshState === 'running') return;
+        this.refreshState = 'running';
+        this.refreshError = '';
+        try {
+          const url = '/api/refresh' + (this.onlyNonOpen ? '?non_open=1' : '');
+          const resp = await this._authedFetch(url, { method: 'POST' });
+          const data = await resp.json().catch(() => ({}));
+          if (resp.status === 401) {
+            this.refreshState = 'error';
+            this.refreshError = 'Password required to refresh — click Update status again to enter it.';
+            return;
+          }
+          if (!resp.ok) throw new Error(data.error || ('HTTP ' + resp.status));
+          const jobId = data.job_id;
+          if (!jobId) throw new Error('no job_id returned');
+          const startedAt = Date.now();
+          while (true) {
+            await new Promise(r => setTimeout(r, 4000));
+            let sresp;
+            try {
+              sresp = await fetch('/api/refresh/status?id=' + encodeURIComponent(jobId));
+            } catch (e) {
+              if (Date.now() - startedAt > 10 * 60 * 1000) throw new Error('refresh timed out');
+              continue;
+            }
+            const sdata = await sresp.json().catch(() => ({}));
+            if (sdata.status === 'completed') {
+              this.refreshState = 'done';
+              return;
+            }
+            if (sdata.status === 'error') {
+              throw new Error(sdata.error || 'refresh failed');
+            }
+          }
+        } catch (e) {
+          this.refreshState = 'error';
+          this.refreshError = 'Refresh failed: ' + e.message + ' (is server.py running?)';
+        }
+      },
+    };
+  }
+</script>
+
+</body>
+</html>

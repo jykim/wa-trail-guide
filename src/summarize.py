@@ -6,8 +6,10 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import sys
 from datetime import date
+from pathlib import Path
 
 from dotenv import load_dotenv
 from openai import OpenAI
@@ -15,10 +17,12 @@ from openai import OpenAI
 from common import DATA
 
 load_dotenv(dotenv_path=DATA.parent / ".env")
+# ~/dotEnv is the canonical source for OPENAI_API_KEY; loads after .env so it wins on overlap.
+load_dotenv(dotenv_path=Path.home() / "dotEnv", override=True)
 
 MODEL = "gpt-4o-mini"
 MAX_TOKENS = 600
-PROMPT_VERSION = "v2"  # bump to invalidate the summary cache when the system prompt changes
+PROMPT_VERSION = "v6"  # bump to invalidate the summary cache when the system prompt changes
 
 SYSTEM_PROMPT = """You classify hiking-trail accessibility from recent WTA trip reports.
 
@@ -30,10 +34,16 @@ Return the structured fields via the function call.
 
 When evidence is weak or absent, use the "unknown" sentinel for road/bugs/wildflowers and pick the best-supported accessibility class.
 
-Accessibility rules:
-- "open": trail is in normal hikeable condition for a fit hiker with no special gear (regular hiking boots, normal day-hike kit). Minor blowdowns, mud, or mosquitoes do not disqualify.
-- "snow_gear": trail is hikeable but requires snow/ice traction (microspikes, crampons, snowshoes, ice axe), a creek-ford workaround, or significant route-finding above the snow line. Use this when reports mention snow on trail, post-holing, microspikes, crampons, snowshoes, slick snow, glacier travel, or impassable creek crossings without gear.
+Accessibility rules. Classify by what a typical hiker encounters on the portion of the route they actually walk — not by whether snow is mentioned anywhere.
+- "open": hikeable by a fit hiker in regular boots with no special gear for the part of the route a typical hiker completes. Minor blowdowns, mud, bugs, or small / optional / easily-avoided snow patches do not disqualify. Snow lying only above the normal turnaround or destination (e.g. a summit scramble most hikers skip) still counts as open.
+- "snow_gear": choose this ONLY when reports describe snow or ice actually on the route that a typical hiker would need traction (microspikes, crampons, snowshoes, ice axe) to cross safely, OR significant route-finding across continuous snow, OR a snowmelt-swollen creek crossing impassable without a workaround. The hazard must be snow or ice specifically. Require evidence that traction was needed for snow/ice on the actual hike — not merely that snow was visible, patchy, on surrounding peaks, or above where most people turn around. A lone mention of a patch that hikers simply walked around stays "open".
 - "closed": the trail or its access is impassable for a typical hiker — road washed out and no walkable workaround, trailhead permit not yet open with no alternative, severe trail damage, active fire closure, etc.
+
+snow_gear is strictly about snow or ice ON THE TRAIL. Traction or trekking poles recommended for loose rock, scree, talus, rock fields, scrambling, steep dirt, mud, slippery boardwalks, or general stability are NOT snow_gear. Neither are blowdowns, bugs, or sun exposure. If the reason someone wants traction/poles is anything other than snow or ice on the trail, classify "open" (or "closed" if genuinely impassable) — never snow_gear.
+
+Classify the named trail to its standard destination only. Ignore snow, scrambling, or route-finding that a report describes for an off-route extension or a higher summit beyond that destination (e.g. continuing to a peak past the lake the trail is named for).
+
+When the trail is substantially clear of snow — snow-free, or only small/patchy snow hikers walked around — classify "open" even if traction is mentioned. BUT if reports describe the route as mostly, largely, or continuously snow-covered (a snowfield, snow most of the way, snow from the parking lot/trailhead, etc.), classify "snow_gear" even when a strong or experienced hiker reports not strictly needing traction — a typical hiker will want it. "Mostly snow-covered" is snow_gear, not open.
 
 snow_line_ft: integer elevation in feet if a report explicitly mentions where snow starts (e.g., "snow above 4500ft"). Otherwise null.
 
@@ -156,7 +166,30 @@ def _cache_key(reports: list[dict]) -> str:
     return f"{PROMPT_VERSION}::{latest.get('url','')}"
 
 
-def main() -> int:
+_SNOW_RE = re.compile(
+    r"(snow|microspike|crampon|post-?hol|snowshoe|ice ?axe|\bice\b|\bicy\b|glissad|spikes)",
+    re.I,
+)
+
+
+def _enforce_snow_evidence(status: dict) -> dict:
+    """Safety net: gpt-4o-mini sometimes files non-snow hazards (mud, loose rock, scree,
+    blowdowns, slick boardwalks) under snow_gear because it lacks an intermediate bucket.
+    If it returns snow_gear but its own reason cites no snow/ice, downgrade to open."""
+    if status.get("accessibility") == "snow_gear":
+        if not _SNOW_RE.search(status.get("accessibility_reason") or ""):
+            status["accessibility"] = "open"
+    return status
+
+
+def main(only_non_open: bool = False) -> int:
+    """Summarize trail reports into status.json.
+
+    only_non_open: when True, skip the OpenAI call for trails whose current status is
+    "open" (reuse their cached status), even if a new report came in. Cheaper/faster
+    refresh focused on snow_gear/closed/unknown trails; won't catch open->closed flips
+    until a full refresh.
+    """
     if not os.getenv("OPENAI_API_KEY"):
         print("ERROR: OPENAI_API_KEY not set (check .env or shell env)", file=sys.stderr)
         return 1
@@ -176,6 +209,8 @@ def main() -> int:
     out: dict[str, dict] = {}
     hits = 0
     misses = 0
+    skipped_open = 0
+    miss_slugs: set[str] = set()
     for i, t in enumerate(trails, 1):
         slug = t["slug"]
         rs = reports_by_slug.get(slug, [])
@@ -186,10 +221,18 @@ def main() -> int:
             hits += 1
             continue
 
+        if only_non_open and cached and cached.get("accessibility") == "open":
+            # Non-open-only mode: leave currently-open trails on their cached status.
+            out[slug] = cached
+            skipped_open += 1
+            continue
+
         misses += 1
+        miss_slugs.add(slug)
         print(f"[summarize] ({i}/{len(trails)}) {t['name']} ({len(rs)} reports)", file=sys.stderr, flush=True)
         try:
             status = summarize_trail(client, t, rs)
+            _enforce_snow_evidence(status)
             status["_cache_sig"] = sig
             out[slug] = status
             print(f"  -> {status['accessibility']}: {status['summary'][:90]}", file=sys.stderr)
@@ -207,30 +250,59 @@ def main() -> int:
                 "_cache_sig": sig,
             }
 
-    # Track accessibility changes vs the previous run. For each slug where the new
-    # accessibility differs from the prior accessibility, record the prior value and
-    # the date the change was detected. Cached entries (no new report) inherit any
-    # prev_accessibility/changed_at already on the previous entry, so a change stays
-    # visible across runs until accessibility shifts again.
+    # Track changes vs the previous run. Two signals, in priority order:
+    #   1. accessibility flipped between buckets (open/snow_gear/closed) — most decision-relevant
+    #   2. summary text changed (driven by a new latest trip report, even within the same bucket)
+    # Cached entries (latest_report_url unchanged) inherit prev_* / changed_at fields from the
+    # previous entry, so a change stays visible across runs until the trail changes again.
     today_iso = date.today().isoformat()
-    changes = 0
+    accessibility_changes = summary_changes = new_report_changes = 0
     for slug, entry in out.items():
         prev_entry = prev_status.get(slug) or {}
         prev_acc = prev_entry.get("accessibility")
         cur_acc = entry.get("accessibility")
+        prev_sum = (prev_entry.get("summary") or "").strip()
+        cur_sum = (entry.get("summary") or "").strip()
+
         if prev_acc and cur_acc and prev_acc != cur_acc:
             entry["prev_accessibility"] = prev_acc
             entry["changed_at"] = today_iso
-            changes += 1
-            print(f"  ~ change: {slug}: {prev_acc} -> {cur_acc}", file=sys.stderr)
+            entry["change_reason"] = "accessibility"
+            accessibility_changes += 1
+            print(f"  ~ access: {slug}: {prev_acc} -> {cur_acc}", file=sys.stderr)
+        elif prev_sum and cur_sum and prev_sum != cur_sum:
+            entry["prev_summary"] = prev_sum
+            entry["changed_at"] = today_iso
+            entry["change_reason"] = "summary"
+            summary_changes += 1
+            print(f"  ~ summary: {slug}", file=sys.stderr)
+        elif slug in miss_slugs and prev_entry:
+            # New trip-report URL came in (cache miss) but summary text happens to
+            # match the prior one. Still worth surfacing as "WTA has news here".
+            entry["changed_at"] = today_iso
+            entry["change_reason"] = "new_report"
+            new_report_changes += 1
+            print(f"  ~ new report: {slug}", file=sys.stderr)
 
     status_path.write_text(json.dumps(out, indent=2, ensure_ascii=False))
     print(
-        f"[summarize] wrote {len(out)} entries ({hits} cached, {misses} OpenAI calls, {changes} new changes) -> {status_path}",
+        f"[summarize] wrote {len(out)} entries "
+        f"({hits} cached, {misses} OpenAI calls, {skipped_open} open-skipped, "
+        f"{accessibility_changes} access changes, {summary_changes} summary changes, "
+        f"{new_report_changes} new reports) -> {status_path}",
         file=sys.stderr,
     )
     return 0
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    import argparse
+
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--only-non-open",
+        action="store_true",
+        help="Skip the OpenAI call for trails currently marked open (cheaper/faster).",
+    )
+    args = parser.parse_args()
+    sys.exit(main(only_non_open=args.only_non_open))

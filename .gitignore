@@ -10,7 +10,11 @@ __pycache__/
 # Generated data (run ./run.sh to populate)
 data/*.json
 !data/extra_trails.json
+!data/campgrounds.json
+!data/rest_areas.json
+!data/oregon_trails.json
 dist/*.html
+!dist/about.html
 logs/
 
 # OS

@@ -73,7 +73,7 @@ Per-refresh cost on a warm cache:
 
 ## Setup
 
-Requires [`uv`](https://docs.astral.sh/uv/) and Python 3.11+. An OpenAI API key (`OPENAI_API_KEY`) in the shell env or `.env`.
+Requires [`uv`](https://docs.astral.sh/uv/) and Python 3.11+. An OpenAI API key (`OPENAI_API_KEY`) in the shell env or `.env`. Optionally set `DASHBOARD_PASSWORD` in `.env` to gate the LLM-spending endpoints (`/api/add`, `/api/refresh`) — the dashboard prompts the user for it on first use and remembers it for 7 days in localStorage. Leave unset to disable auth.
 
 ```bash
 git clone https://github.com/jykim/wa-trail-guide.git

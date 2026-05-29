@@ -6,18 +6,26 @@ Routes:
   POST /api/add          — body {"slug": str, "url": str}: fetch the trail page,
                            scrape 3 latest reports, run OpenAI summarization, update
                            data/*.json and dist/index.html, append to extra_trails.json
+  POST /api/subscribe    — body {"email": str}: append to data/subscribers.json (open)
+  GET  /api/subscribers  — list registered emails (password-gated; admin page)
 
 Designed as a drop-in replacement for `python -m http.server 8765 --directory dist/`.
 """
 from __future__ import annotations
 
+import hmac
+import importlib
 import json
+import os
 import re
 import sys
 import threading
+import time
 import traceback
 import urllib.parse
+import uuid
 from dataclasses import asdict
+from pathlib import Path
 from http.server import BaseHTTPRequestHandler, SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
@@ -33,8 +41,13 @@ PORT = 8765
 SEARCH_URL = "https://www.wta.org/go-outside/hikes"
 
 _data_lock = threading.Lock()  # serialize state-mutating /api/add calls
+_jobs: dict[str, dict] = {}     # async refresh jobs: {job_id: {status, started_at, ...}}
+_jobs_lock = threading.Lock()
+_JOB_KEEP_SECS = 30 * 60         # GC completed jobs after 30 minutes
 
 load_dotenv(dotenv_path=DATA.parent / ".env")
+# ~/dotEnv is the canonical source for OPENAI_API_KEY; loads after .env so it wins on overlap.
+load_dotenv(dotenv_path=Path.home() / "dotEnv", override=True)
 
 
 def search_wta(query: str, limit: int = 20) -> list[dict]:
@@ -129,14 +142,16 @@ def add_trail(slug: str, url: str) -> dict:
         # Summarize — import lazily so the server still boots if OpenAI isn't installed/configured.
         from openai import OpenAI
 
-        from summarize import _cache_key, summarize_trail
+        from summarize import _cache_key, _enforce_snow_evidence, summarize_trail
 
         status_path = DATA / "status.json"
         status = json.loads(status_path.read_text()) if status_path.exists() else {}
+        is_new_slug = slug not in status
         rs_dicts = reports[slug]
         sig = _cache_key(rs_dicts)
         try:
             st = summarize_trail(OpenAI(), asdict(trail), rs_dicts)
+            _enforce_snow_evidence(st)
             st["_cache_sig"] = sig
         except Exception as e:
             print(f"  ! summarize: {e}", file=sys.stderr)
@@ -151,6 +166,10 @@ def add_trail(slug: str, url: str) -> dict:
                 "last_report_date": "",
                 "_cache_sig": sig,
             }
+        if is_new_slug:
+            from datetime import date as _date
+            st["change_reason"] = "new"
+            st["changed_at"] = _date.today().isoformat()
         status[slug] = st
         status_path.write_text(json.dumps(status, indent=2, ensure_ascii=False))
 
@@ -161,6 +180,9 @@ def add_trail(slug: str, url: str) -> dict:
             extras_path.write_text(json.dumps(extras, indent=2, ensure_ascii=False))
 
         import render
+        # Reload from disk so edits made after the server started take effect
+        # (e.g., new keys added to the dashboard data blob).
+        importlib.reload(render)
         render.main()
 
         return {
@@ -172,15 +194,22 @@ def add_trail(slug: str, url: str) -> dict:
         }
 
 
-def refresh_status() -> dict:
+def refresh_status(only_non_open: bool = False) -> dict:
     """Rescrape trip reports for all known trails, resummarize what's new, re-render.
 
     Skips the regional top-N scrape (slow, slow-moving). Typical wall time ~90-120s.
+    only_non_open: only re-summarize trails that aren't currently "open" (cheaper/faster).
     """
     with _data_lock:
         import scrape_reports
         import summarize
         import render
+
+        # Reload from disk in case these modules were edited after the
+        # long-running server first imported them.
+        importlib.reload(scrape_reports)
+        importlib.reload(summarize)
+        importlib.reload(render)
 
         from datetime import date
 
@@ -188,7 +217,7 @@ def refresh_status() -> dict:
         before = json.loads(status_path.read_text()) if status_path.exists() else {}
 
         scrape_reports.main()
-        summarize.main()
+        summarize.main(only_non_open=only_non_open)
         render.main()
 
         after = json.loads(status_path.read_text())
@@ -206,12 +235,91 @@ def refresh_status() -> dict:
         }
 
 
+def _gc_jobs() -> None:
+    now = time.time()
+    with _jobs_lock:
+        for jid in list(_jobs.keys()):
+            j = _jobs[jid]
+            if j.get("finished_at") and now - j["finished_at"] > _JOB_KEEP_SECS:
+                _jobs.pop(jid, None)
+
+
+def start_refresh_job(only_non_open: bool = False) -> str:
+    """Kick off refresh_status() on a background thread. Returns job_id."""
+    _gc_jobs()
+    job_id = uuid.uuid4().hex[:12]
+    with _jobs_lock:
+        _jobs[job_id] = {"status": "running", "started_at": time.time()}
+
+    def run():
+        try:
+            res = refresh_status(only_non_open=only_non_open)
+            with _jobs_lock:
+                _jobs[job_id].update(status="completed", result=res, finished_at=time.time())
+        except Exception as e:
+            traceback.print_exc()
+            with _jobs_lock:
+                _jobs[job_id].update(status="error", error=str(e), finished_at=time.time())
+
+    threading.Thread(target=run, daemon=True, name=f"refresh-{job_id}").start()
+    return job_id
+
+
+def get_job(job_id: str) -> dict | None:
+    with _jobs_lock:
+        j = _jobs.get(job_id)
+        return dict(j) if j else None
+
+
 def _slug_from_url(url: str) -> str:
     return url.rstrip("/").rsplit("/", 1)[-1]
 
 
+SAFE_EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+_subs_lock = threading.Lock()
+
+
+def subscribe_email(email: str) -> dict:
+    """Append an email to data/subscribers.json (deduped, case-insensitive)."""
+    from datetime import datetime, timezone
+
+    with _subs_lock:
+        path = DATA / "subscribers.json"
+        subs = json.loads(path.read_text()) if path.exists() else []
+        key = email.lower()
+        if any((s.get("email") or "").lower() == key for s in subs):
+            return {"status": "exists", "email": email}
+        subs.append({"email": email, "added": datetime.now(timezone.utc).isoformat()})
+        path.write_text(json.dumps(subs, indent=2, ensure_ascii=False))
+        return {"status": "added", "email": email, "count": len(subs)}
+
+
+def list_subscribers() -> list[dict]:
+    path = DATA / "subscribers.json"
+    if not path.exists():
+        return []
+    try:
+        return json.loads(path.read_text())
+    except json.JSONDecodeError:
+        return []
+
+
 SAFE_SLUG_RE = re.compile(r"^[a-z0-9][a-z0-9.\-]{0,120}$", re.I)
 SAFE_URL_RE = re.compile(r"^https://www\.wta\.org/go-hiking/hikes/[A-Za-z0-9.\-/]+$")
+
+
+def _dashboard_password() -> str:
+    """Read fresh on each call so .env edits don't require a restart."""
+    return (os.getenv("DASHBOARD_PASSWORD") or "").strip()
+
+
+def check_auth(headers) -> bool:
+    """True if no password is configured, or the request supplied a matching one."""
+    expected = _dashboard_password()
+    if not expected:
+        return True  # auth disabled when env var unset
+    sent = headers.get("X-Dashboard-Password") or ""
+    return hmac.compare_digest(sent, expected)
 
 
 class Handler(SimpleHTTPRequestHandler):
@@ -244,14 +352,48 @@ class Handler(SimpleHTTPRequestHandler):
             except Exception as e:
                 traceback.print_exc()
                 return self._send_json(502, {"error": str(e)})
+        if parsed.path == "/api/refresh/status":
+            qs = urllib.parse.parse_qs(parsed.query)
+            jid = (qs.get("id", [""])[0] or "").strip()
+            j = get_job(jid) if jid else None
+            if not j:
+                return self._send_json(404, {"error": "unknown job"})
+            return self._send_json(200, j)
+        if parsed.path == "/api/subscribers":
+            if not check_auth(self.headers):
+                return self._send_json(401, {"error": "password required"})
+            return self._send_json(200, {"subscribers": list_subscribers()})
+        # Clean URL for the (unlinked) admin page: /admin and /admin/ -> admin.html
+        if parsed.path in ("/admin", "/admin/"):
+            self.path = "/admin.html"
         return super().do_GET()
 
     def do_POST(self):
         parsed = urllib.parse.urlparse(self.path)
 
         if parsed.path == "/api/refresh":
+            if not check_auth(self.headers):
+                return self._send_json(401, {"error": "password required"})
+            qs = urllib.parse.parse_qs(parsed.query)
+            only_non_open = (qs.get("non_open", ["0"])[0] or "").lower() in ("1", "true", "yes")
             try:
-                return self._send_json(200, refresh_status())
+                job_id = start_refresh_job(only_non_open=only_non_open)
+                return self._send_json(202, {"job_id": job_id, "status": "running"})
+            except Exception as e:
+                traceback.print_exc()
+                return self._send_json(500, {"error": str(e)})
+
+        if parsed.path == "/api/subscribe":
+            length = int(self.headers.get("Content-Length") or 0)
+            try:
+                body = json.loads(self.rfile.read(length).decode("utf-8")) if length else {}
+            except json.JSONDecodeError:
+                return self._send_json(400, {"error": "invalid json"})
+            email = (body.get("email") or "").strip()
+            if not SAFE_EMAIL_RE.match(email) or len(email) > 254:
+                return self._send_json(400, {"error": "invalid email"})
+            try:
+                return self._send_json(200, subscribe_email(email))
             except Exception as e:
                 traceback.print_exc()
                 return self._send_json(500, {"error": str(e)})
@@ -259,6 +401,8 @@ class Handler(SimpleHTTPRequestHandler):
         if parsed.path != "/api/add":
             return self._send_json(404, {"error": "not found"})
 
+        # Adding a trail is open (no password) — slug/url validation below limits
+        # this to real wta.org hike pages. Refresh stays password-gated above.
         length = int(self.headers.get("Content-Length") or 0)
         try:
             body = json.loads(self.rfile.read(length).decode("utf-8")) if length else {}

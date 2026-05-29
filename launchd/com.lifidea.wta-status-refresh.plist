@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.lifidea.wta-status-refresh</string>
+
+  <!-- Partial daily refresh: only re-summarize non-open trails (skips the LLM for Open). -->
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Users/lifidea/dev/wa-trail-guide/refresh.sh</string>
+    <string>--non-open</string>
+  </array>
+
+  <key>WorkingDirectory</key>
+  <string>/Users/lifidea/dev/wa-trail-guide</string>
+
+  <!-- 3am every day EXCEPT Friday (Weekday 5), when the full update runs instead. -->
+  <key>StartCalendarInterval</key>
+  <array>
+    <dict><key>Weekday</key><integer>0</integer><key>Hour</key><integer>3</integer><key>Minute</key><integer>0</integer></dict>
+    <dict><key>Weekday</key><integer>1</integer><key>Hour</key><integer>3</integer><key>Minute</key><integer>0</integer></dict>
+    <dict><key>Weekday</key><integer>2</integer><key>Hour</key><integer>3</integer><key>Minute</key><integer>0</integer></dict>
+    <dict><key>Weekday</key><integer>3</integer><key>Hour</key><integer>3</integer><key>Minute</key><integer>0</integer></dict>
+    <dict><key>Weekday</key><integer>4</integer><key>Hour</key><integer>3</integer><key>Minute</key><integer>0</integer></dict>
+    <dict><key>Weekday</key><integer>6</integer><key>Hour</key><integer>3</integer><key>Minute</key><integer>0</integer></dict>
+  </array>
+
+  <key>StandardOutPath</key>
+  <string>/Users/lifidea/dev/wa-trail-guide/logs/launchd-refresh.out</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/lifidea/dev/wa-trail-guide/logs/launchd-refresh.err</string>
+
+  <key>RunAtLoad</key>
+  <false/>
+</dict>
+</plist>
